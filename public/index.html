@@ -244,7 +244,6 @@ body {
 
 /* ── HOST CONTROL BAR (ALTERAÇÃO 1) ── */
 .host-ctrl-bar {
-  display: none; /* mostrado só ao anfitrião durante o quiz */
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   background: linear-gradient(90deg, rgba(26,26,46,.95), rgba(22,33,62,.95));
   padding: 6px 12px; border-bottom: 2px solid var(--gold);
@@ -799,13 +798,20 @@ function go(id) {
   const hostScreens = ['s-host-lobby','s-host-quiz','s-host-reveal','s-host-over'];
   const bar = document.getElementById('hostCtrlBar');
   if (role === 'host' && hostScreens.includes(id)) {
-    bar.classList.remove('hidden');
-    // Barra de iniciar no lobby; barra de próxima durante reveal
-    if (id === 's-host-lobby') {
-      document.getElementById('hcbStartBtn').style.display = '';
-      document.getElementById('hcbNextBtn').style.display = 'none';
-    } else if (id === 's-host-over') {
+    if (id === 's-host-over') {
       bar.classList.add('hidden');
+    } else {
+      bar.classList.remove('hidden');
+      if (id === 's-host-lobby') {
+        document.getElementById('hcbStartBtn').style.display = '';
+        document.getElementById('hcbNextBtn').style.display = 'none';
+      } else if (id === 's-host-quiz') {
+        document.getElementById('hcbStartBtn').style.display = 'none';
+        document.getElementById('hcbNextBtn').style.display = 'none';
+      } else if (id === 's-host-reveal') {
+        document.getElementById('hcbStartBtn').style.display = 'none';
+        document.getElementById('hcbNextBtn').style.display = '';
+      }
     }
   } else if (!hostScreens.includes(id)) {
     bar.classList.add('hidden');
@@ -881,7 +887,7 @@ function sendAnswer(idx) {
   if (answered) return;
   answered = true;
   // [ALTERAÇÃO 1] Desabilitar botões do ecrã correto (host ou player)
-  const container = role === 'host' ? '#hAnswers .ans-btn' : '.ans-btn';
+  const container = role === 'host' ? '#hAnswers .ans-btn' : '#pAnswers .ans-btn';
   document.querySelectorAll(container).forEach(b => { b.classList.add('dim'); b.disabled = true; });
   send({ type: 'answer', answer: idx });
   playClick();
@@ -899,12 +905,9 @@ function handleMsg(msg) {
       document.getElementById('pinDisplay').textContent = msg.pin;
       document.getElementById('playerCount').textContent = '0';
       document.getElementById('playersGrid').innerHTML = '';
-      // [ALTERAÇÃO 1] Mostrar barra de controlo do anfitrião e atualizar PIN
+      // [ALTERAÇÃO 1] Atualizar PIN na barra de controlo
       document.getElementById('hcbPin').textContent = '📌 ' + msg.pin;
-      document.getElementById('hostCtrlBar').classList.remove('hidden');
-      document.getElementById('hcbStartBtn').style.display = '';
-      document.getElementById('hcbNextBtn').style.display = 'none';
-      go('s-host-lobby');
+      go('s-host-lobby'); // go() trata de mostrar a barra e o botão correto
       break;
 
     case 'player_joined':
@@ -1012,10 +1015,7 @@ function handleMsg(msg) {
       hideFeedback();
       if (role === 'host') {
         renderHostReveal(msg);
-        // [ALTERAÇÃO 1] Mostrar botão "Próxima" na barra de controlo
-        document.getElementById('hcbNextBtn').style.display = '';
-        document.getElementById('hcbAnswered').textContent = '';
-        // Destacar resposta correta nas opções do anfitrião
+        // [ALTERAÇÃO 1] Destacar resposta correta nas opções do anfitrião
         const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
         hBtns.forEach((b, i) => {
           b.disabled = true;
@@ -1113,9 +1113,7 @@ function renderHostReveal(msg) {
   if (msg.explanation) { expl.textContent = '💡 ' + msg.explanation; expl.style.display = ''; }
   else expl.style.display = 'none';
   renderLb(document.getElementById('revealLb'), msg.leaderboard);
-  // [ALTERAÇÃO 1] Mostrar botão "Próxima" na barra de controlo do host
-  document.getElementById('hcbNextBtn').style.display = '';
-  document.getElementById('hcbStartBtn').style.display = 'none';
+  document.getElementById('hcbAnswered').textContent = '';
   go('s-host-reveal');
 }
 
@@ -1143,7 +1141,7 @@ function renderPlayerQuestion(msg) {
   document.getElementById('pIcon').textContent = msg.icon;
   document.getElementById('pQ').textContent = msg.q;
   document.getElementById('pSbName').textContent = myName.substring(0,12);
-  const btns = document.querySelectorAll('.ans-btn');
+  const btns = document.querySelectorAll('#pAnswers .ans-btn');
   btns.forEach((b,i) => {
     b.querySelector('.at').textContent = msg.answers[i];
     b.className = 'ans-btn';
