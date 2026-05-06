@@ -40,27 +40,21 @@ function generatePIN() {
   return pin;
 }
 
-function createGame(hostWs, hostName, options) {
+function createGame(hostWs, hostName, hostAvatar, options) {
   const pin = generatePIN();
-  // [ALTERAÇÃO 1] O anfitrião é agora também um jogador com ID 'host'
   const hostPlayerId = 'host';
   const game = {
-    pin,
-    hostWs,
-    hostName,
-    options,
-    players: new Map(), // id -> { ws, name, score, answers, streak, lives }
-    state: 'waiting', // waiting | countdown | question | result | ended
-    currentQ: 0,
-    questions: [],
-    timer: null,
-    timeLeft: 0,
-    startTime: 0,
-    questionStartTime: 0,
-    hostPlayerId, // [ALTERAÇÃO 1] ID do anfitrião como jogador
+    pin, hostWs, hostName, hostAvatar, options,
+    players: new Map(),
+    state: 'waiting',
+    currentQ: 0, questions: [], timer: null,
+    timeLeft: 0, startTime: 0, questionStartTime: 0,
+    hostPlayerId,
   };
-  // [ALTERAÇÃO 1] Adicionar anfitrião como jogador na partida
-  const hostPlayer = { ws: hostWs, id: hostPlayerId, name: hostName, score: 0, streak: 0, lives: 3, answered: false, isHost: true };
+  const hostPlayer = {
+    ws: hostWs, id: hostPlayerId, name: hostName, avatar: hostAvatar || '🐑',
+    score: 0, streak: 0, lives: 3, answered: false, isHost: true
+  };
   game.players.set(hostPlayerId, hostPlayer);
   games.set(pin, game);
   return game;
@@ -95,7 +89,8 @@ function removePlayer(ws) {
 
 function getPlayerList(game) {
   return [...game.players.values()].map(p => ({
-    id: p.id, name: p.name, score: p.score, lives: p.lives, streak: p.streak, isHost: !!p.isHost
+    id: p.id, name: p.name, avatar: p.avatar || '🐑',
+    score: p.score, lives: p.lives, streak: p.streak, isHost: !!p.isHost
   }));
 }
 
@@ -282,9 +277,9 @@ function endGame(game) {
   clearInterval(game.timer);
   const leaderboard = getPlayerList(game).sort((a, b) => b.score - a.score);
 
-  // Save ranking
+  // Save ranking (with avatar)
   for (const p of leaderboard) {
-    appData.ranking.push({ name: p.name, score: p.score, date: new Date().toLocaleDateString('pt-BR') });
+    appData.ranking.push({ name: p.name, avatar: p.avatar || '🐑', score: p.score, date: new Date().toLocaleDateString('pt-BR') });
   }
   appData.ranking.sort((a, b) => b.score - a.score);
   appData.ranking = appData.ranking.slice(0, 50);
@@ -312,7 +307,7 @@ wss.on('connection', (ws) => {
 
       // ─── HOST: Create game ───
       case 'create_game': {
-        const game = createGame(ws, msg.name, msg.options || {});
+        const game = createGame(ws, msg.name, msg.avatar || '🐑', msg.options || {});
         ws.gamePin = game.pin;
         ws.role = 'host';
         sendToWs(ws, { type: 'game_created', pin: game.pin });
@@ -325,16 +320,18 @@ wss.on('connection', (ws) => {
         if (!game) { sendToWs(ws, { type: 'error', msg: 'Jogo não encontrado!' }); return; }
         if (game.state !== 'waiting') { sendToWs(ws, { type: 'error', msg: 'O jogo já começou!' }); return; }
         const id = 'p' + ws.clientId;
-        const player = { ws, id, name: msg.name, score: 0, streak: 0, lives: 3, answered: false };
+        const player = {
+          ws, id, name: msg.name, avatar: msg.avatar || '🐑',
+          score: 0, streak: 0, lives: 3, answered: false
+        };
         game.players.set(id, player);
         ws.gamePin = game.pin;
         ws.playerId = id;
         ws.role = 'player';
         sendToWs(ws, { type: 'joined', id, pin: game.pin, hostName: game.hostName });
-        // [ALTERAÇÃO 1] Usar contagem real de jogadores (sem anfitrião)
         const realCount = getRealPlayerCount(game);
-        sendToHost(game, { type: 'player_joined', id, name: msg.name, count: realCount, players: getPlayerList(game) });
-        broadcastToGame(game, { type: 'player_joined', id, name: msg.name, count: realCount }, ws);
+        sendToHost(game, { type: 'player_joined', id, name: msg.name, avatar: msg.avatar || '🐑', count: realCount, players: getPlayerList(game) });
+        broadcastToGame(game, { type: 'player_joined', id, name: msg.name, avatar: msg.avatar || '🐑', count: realCount }, ws);
         break;
       }
 
