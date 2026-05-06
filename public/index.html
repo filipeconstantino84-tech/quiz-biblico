@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PRT">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Quiz Bíblico Multiplayer</title>
+<title>Ovelha Inteligente Multiplayer</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --pink: #e91e8c; --pink2: #c2185b;
+  --pink: #26a69a; --pink2: ##00897b;
   --green: #2ecc71; --green2: #27ae60;
   --gold: #FFD700; --gold2: #FFA500;
   --blue: #3498db; --blue2: #2980b9;
@@ -277,9 +277,9 @@ body {
       <rect x="112" y="166" width="14" height="10" rx="4" fill="#555"/>
     </svg>
   </div>
-  <div class="title">Quiz Bíblico</div>
-  <div class="subtitle">✝️ Multiplayer em Tempo Real</div>
-  <button class="btn btn-pink" onclick="go('s-host-setup')">👑 Criar Jogo (Anfitrião)</button>
+  <div class="title">Ovelha Inteligente</div>
+  <div class="subtitle"> Multiplayer em Tempo Real</div>
+  <button class="btn btn-pink" onclick="go('s-host-setup')">🐑 Criar Jogo (Anfitrião)</button>
   <button class="btn btn-green" onclick="go('s-join')">🎮 Ingressar num Jogo</button>
   <button class="btn btn-gold" onclick="go('s-ranking')">🏆 Ranking Global</button>
   <button class="btn btn-blue" onclick="go('s-admin-login')" style="max-width:200px;font-size:1rem;padding:10px">⚙️ Admin</button>
@@ -288,7 +288,7 @@ body {
 <!-- ══════════════ HOST SETUP ══════════════ -->
 <div class="screen" id="s-host-setup">
   <span class="back" onclick="go('s-home')">← Voltar</span>
-  <div class="title" style="font-size:1.9rem;margin-bottom:14px">👑 Criar Jogo</div>
+  <div class="title" style="font-size:2rem;margin-bottom:14px">🐑 Criar Jogo</div>
   <div class="card">
     <label class="lbl">👤 Seu Nome (Anfitrião)</label>
     <input class="inp" id="hostName" type="text" placeholder="Nome do anfitrião" maxlength="20">
@@ -310,13 +310,13 @@ body {
     <label class="lbl">🏷️ Categoria</label>
     <select class="sel" id="catSel">
       <option value="all">📚 Todas</option>
-      <option value="ot">📜 Antigo Testamento</option>
-      <option value="nt">✝️ Novo Testamento</option>
+      <option value="ot">📜 Escrituras Hebraicas</option>
+      <option value="nt">📖 Escrituras Gregas Cristãs</option>
       <option value="personagens">👑 Personagens</option>
       <option value="milagres">✨ Milagres</option>
     </select>
 
-    <button class="btn btn-pink" onclick="createGame()" style="margin:0">🕊️ Criar Sala!</button>
+    <button class="btn btn-pink" onclick="createGame()" style="margin:0"> Criar Sala!</button>
   </div>
 </div>
 
@@ -339,7 +339,7 @@ body {
 <!-- ══════════════ JOIN ══════════════ -->
 <div class="screen" id="s-join">
   <span class="back" onclick="go('s-home')">← Voltar</span>
-  <div class="title" style="font-size:1.9rem;margin-bottom:14px">🎮 Ingressar</div>
+  <div class="title" style="font-size:2rem;margin-bottom:14px">🎮 Ingressar</div>
   <div class="card">
     <label class="lbl">📌 PIN do Jogo</label>
     <input class="inp" id="joinPin" type="number" placeholder="Digite o PIN" maxlength="4" style="font-family:'Fredoka One',cursive;font-size:2rem;text-align:center;letter-spacing:.2em">
@@ -464,7 +464,7 @@ body {
 <!-- ══════════════ ADMIN LOGIN ══════════════ -->
 <div class="screen" id="s-admin-login">
   <span class="back" onclick="go('s-home')">← Voltar</span>
-  <div class="title" style="font-size:1.8rem;margin-bottom:14px">⚙️ Admin</div>
+  <div class="title" style="font-size:2rem;margin-bottom:14px">⚙️ Admin</div>
   <div class="card">
     <label class="lbl">🔐 Senha Admin</label>
     <input class="inp" id="adminPass" type="password" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')adminLogin()">
