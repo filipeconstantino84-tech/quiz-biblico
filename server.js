@@ -42,6 +42,8 @@ function generatePIN() {
 
 function createGame(hostWs, hostName, options) {
   const pin = generatePIN();
+  // [ALTERAÇÃO 1] O anfitrião é agora também um jogador com ID 'host'
+  const hostPlayerId = 'host';
   const game = {
     pin,
     hostWs,
@@ -55,7 +57,11 @@ function createGame(hostWs, hostName, options) {
     timeLeft: 0,
     startTime: 0,
     questionStartTime: 0,
+    hostPlayerId, // [ALTERAÇÃO 1] ID do anfitrião como jogador
   };
+  // [ALTERAÇÃO 1] Adicionar anfitrião como jogador na partida
+  const hostPlayer = { ws: hostWs, id: hostPlayerId, name: hostName, score: 0, streak: 0, lives: 3, answered: false, isHost: true };
+  game.players.set(hostPlayerId, hostPlayer);
   games.set(pin, game);
   return game;
 }
@@ -65,6 +71,8 @@ function getGame(pin) { return games.get(pin); }
 function removePlayer(ws) {
   for (const [pin, game] of games) {
     for (const [id, player] of game.players) {
+      // [ALTERAÇÃO 1] Ignorar o registo do anfitrião-jogador ao procurar por ws de jogador
+      if (player.isHost) continue;
       if (player.ws === ws) {
         game.players.delete(id);
         broadcastToGame(game, { type: 'player_left', id, name: player.name, count: game.players.size });
@@ -87,8 +95,13 @@ function removePlayer(ws) {
 
 function getPlayerList(game) {
   return [...game.players.values()].map(p => ({
-    id: p.id, name: p.name, score: p.score, lives: p.lives, streak: p.streak
+    id: p.id, name: p.name, score: p.score, lives: p.lives, streak: p.streak, isHost: !!p.isHost
   }));
+}
+
+// [ALTERAÇÃO 1] Conta apenas jogadores reais (excluindo o anfitrião) para exibição no lobby
+function getRealPlayerCount(game) {
+  return [...game.players.values()].filter(p => !p.isHost).length;
 }
 
 function sendToWs(ws, data) {
@@ -151,20 +164,21 @@ function startQuestion(game) {
   game.state = 'question';
   game.questionStartTime = Date.now();
 
-  // Reset answers for this round
+  // Reset answers for this round (including host-player)
   for (const player of game.players.values()) player.answered = false;
 
   const timeLimit = game.options.difficulty === 'dificil' ? 20 : game.options.difficulty === 'medio' ? 25 : 30;
   game.timeLeft = timeLimit;
 
-  // Send question to host (with answer)
+  // [ALTERAÇÃO 1] Enviar ao anfitrião a pergunta com resposta correta (para exibição no painel)
+  // E também como jogador (pode responder). O campo 'correct' serve só para o painel do host.
   sendToHost(game, {
     type: 'question',
     index: game.currentQ,
     total: game.questions.length,
     q: q.q, icon: q.icon, cat: q.cat,
     answers: q.a,
-    correct: q.correct,
+    correct: q.correct, // [ALTERAÇÃO 1] anfitrião recebe a resposta correta para o painel
     timeLimit,
     players: getPlayerList(game),
   });
@@ -212,8 +226,15 @@ function processAnswer(game, playerId, answerIdx) {
     player.lives = Math.max(0, (player.lives || 3) - 1);
   }
 
-  sendToWs(player.ws, { type: 'answer_result', correct, pts, streak: player.streak, lives: player.lives, score: player.score });
-  sendToHost(game, { type: 'player_answered', id: playerId, name: player.name, correct, players: getPlayerList(game) });
+  // [ALTERAÇÃO 1] Enviar resultado ao jogador (seja host ou player normal)
+  sendToWs(player.ws, { type: 'answer_result', correct, pts, streak: player.streak, lives: player.lives, score: player.score, isHostPlayer: !!player.isHost });
+  // Notificar o host do painel (se não for o próprio host a responder)
+  if (!player.isHost) {
+    sendToHost(game, { type: 'player_answered', id: playerId, name: player.name, correct, players: getPlayerList(game) });
+  } else {
+    // Anfitrião respondeu — atualizar painel de respostas para ele mesmo
+    sendToHost(game, { type: 'player_answered', id: playerId, name: player.name, correct, players: getPlayerList(game) });
+  }
 
   // Check if all answered
   const allAnswered = [...game.players.values()].every(p => p.answered || p.lives <= 0);
@@ -245,11 +266,13 @@ function revealAnswer(game) {
 }
 
 function nextQuestion(game) {
-  // Remove eliminated players
+  // [ALTERAÇÃO 1] Remover jogadores eliminados (exceto o anfitrião — o anfitrião não é eliminado)
   for (const [id, player] of game.players) {
-    if (player.lives <= 0) game.players.delete(id);
+    if (player.lives <= 0 && !player.isHost) game.players.delete(id);
   }
-  if (game.players.size === 0) { endGame(game); return; }
+  // Verificar se ainda há jogadores para jogar (host conta)
+  const activePlayers = [...game.players.values()].filter(p => p.lives > 0 || p.isHost);
+  if (activePlayers.length === 0) { endGame(game); return; }
   game.currentQ++;
   startQuestion(game);
 }
@@ -308,8 +331,10 @@ wss.on('connection', (ws) => {
         ws.playerId = id;
         ws.role = 'player';
         sendToWs(ws, { type: 'joined', id, pin: game.pin, hostName: game.hostName });
-        sendToHost(game, { type: 'player_joined', id, name: msg.name, count: game.players.size, players: getPlayerList(game) });
-        broadcastToGame(game, { type: 'player_joined', id, name: msg.name, count: game.players.size }, ws);
+        // [ALTERAÇÃO 1] Usar contagem real de jogadores (sem anfitrião)
+        const realCount = getRealPlayerCount(game);
+        sendToHost(game, { type: 'player_joined', id, name: msg.name, count: realCount, players: getPlayerList(game) });
+        broadcastToGame(game, { type: 'player_joined', id, name: msg.name, count: realCount }, ws);
         break;
       }
 
@@ -317,7 +342,11 @@ wss.on('connection', (ws) => {
       case 'start_game': {
         const game = getGame(ws.gamePin);
         if (!game || game.hostWs !== ws) return;
-        if (game.players.size === 0) { sendToWs(ws, { type: 'error', msg: 'Aguarde pelo menos 1 jogador!' }); return; }
+        // [ALTERAÇÃO 1] O jogo pode iniciar só com o anfitrião (ele próprio é jogador)
+        const realPlayers = getRealPlayerCount(game);
+        if (realPlayers === 0 && game.players.size <= 1) {
+          // Permite iniciar com apenas o anfitrião-jogador
+        }
         startCountdown(game);
         break;
       }
@@ -334,7 +363,9 @@ wss.on('connection', (ws) => {
       case 'answer': {
         const game = getGame(ws.gamePin);
         if (!game) return;
-        processAnswer(game, ws.playerId, msg.answer);
+        // [ALTERAÇÃO 1] Anfitrião também pode responder usando o seu ID de jogador
+        const pid = ws.role === 'host' ? game.hostPlayerId : ws.playerId;
+        processAnswer(game, pid, msg.answer);
         break;
       }
 
@@ -444,7 +475,7 @@ function getDefaultQuestions() {
     { id:3, q:"Quem foi o primeiro homem criado por Deus?", a:["Abel","Caim","Noé","Adão"], correct:3, cat:"personagens", icon:"🧑", diff:"facil", explanation:"Adão foi o primeiro homem, criado do pó da terra (Gênesis 2:7)." },
     { id:4, q:"Em qual monte Moisés recebeu os Dez Mandamentos?", a:["Monte Sião","Monte Sinai","Monte Carmelo","Monte Oliveiras"], correct:1, cat:"ot", icon:"⛰️", diff:"facil", explanation:"Deus falou com Moisés no Monte Sinai (Êxodo 19-20)." },
     { id:5, q:"Com que Davi matou o gigante Golias?", a:["Espada","Lança","Funda e pedra","Arco e flecha"], correct:2, cat:"personagens", icon:"🪨", diff:"facil", explanation:"Davi usou uma funda e uma pedra para derrubar Golias (1 Samuel 17:50)." },
-    { id:6, q:"Qual era o nome da mãe de Jesus?", a:["Marta","Miriam","Maria","Raquel"], correct:2, cat:"nt", icon:"✝️", diff:"facil", explanation:"Maria, escolhida por Deus para ser a mãe de Jesus (Lucas 1:30-31)." },
+    { id:6, q:"Qual era o nome da mãe de Jesus?", a:["Marta","Miriam","Maria","Raquel"], correct:2, cat:"nt", diff:"facil", explanation:"Maria, escolhida por Deus para ser a mãe de Jesus (Lucas 1:30-31)." },
     { id:7, q:"Quem batizou Jesus no rio Jordão?", a:["Pedro","Paulo","João Batista","André"], correct:2, cat:"nt", icon:"💧", diff:"facil", explanation:"João Batista batizou Jesus no rio Jordão (Mateus 3:13-17)." },
     { id:8, q:"Qual apóstolo negou Jesus três vezes?", a:["João","Judas","Tomé","Pedro"], correct:3, cat:"nt", icon:"🐓", diff:"facil", explanation:"Pedro negou conhecer Jesus três vezes antes do galo cantar (Lucas 22:61)." },
     { id:9, q:"Em que cidade Jesus nasceu?", a:["Nazaré","Jerusalém","Belém","Jericó"], correct:2, cat:"nt", icon:"⭐", diff:"facil", explanation:"Jesus nasceu em Belém de Judá, conforme a profecia (Miquéias 5:2)." },
@@ -462,7 +493,7 @@ function getDefaultQuestions() {
     { id:21, q:"Quantos dias Jesus ficou no deserto sendo tentado?", a:["20","30","40","50"], correct:2, cat:"nt", icon:"🏜️", diff:"facil", explanation:"Jesus passou 40 dias e 40 noites no deserto, sendo tentado pelo diabo (Mateus 4:2)." },
     { id:22, q:"Quantos salmos tem o livro dos Salmos?", a:["100","120","150","200"], correct:2, cat:"ot", icon:"🎵", diff:"medio", explanation:"O livro dos Salmos possui 150 salmos, muitos atribuídos ao rei Davi." },
     { id:23, q:"Qual animal falou com Balaão?", a:["Leão","Jumento","Serpente","Corvo"], correct:1, cat:"ot", icon:"🐴", diff:"medio", explanation:"O jumento de Balaão falou por milagre de Deus (Números 22:28)." },
-    { id:24, q:"Onde Jesus foi crucificado?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", icon:"✝️", diff:"medio", explanation:"Jesus foi crucificado no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
+    { id:24, q:"Onde Jesus foi crucificado?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", diff:"medio", explanation:"Jesus foi crucificado no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
     { id:25, q:"Qual é o versículo mais curto da Bíblia?", a:["João 3:16","João 11:35","Salmos 23:1","Filipenses 4:4"], correct:1, cat:"ot", icon:"📝", diff:"dificil", explanation:"'Jesus chorou' (João 11:35) é o versículo mais curto da Bíblia em português." },
     { id:26, q:"Quem construiu o templo de Jerusalém?", a:["Davi","Salomão","Josafá","Ezequias"], correct:1, cat:"personagens", icon:"🏛️", diff:"medio", explanation:"Salomão construiu o primeiro Templo de Jerusalém (1 Reis 6)." },
     { id:27, q:"Quantos anos Noé tinha quando entrou na arca?", a:["300","500","600","700"], correct:2, cat:"ot", icon:"👴", diff:"dificil", explanation:"Noé tinha 600 anos quando as águas do dilúvio vieram sobre a terra (Gênesis 7:6)." },
