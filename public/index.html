@@ -242,6 +242,46 @@ body {
 .host-lb { width:100%; max-width:420px; background:rgba(255,255,255,.9); border-radius:20px; padding:14px; max-height:280px; overflow-y:auto; border:2px solid rgba(255,215,0,.4); margin-bottom:10px; }
 .answered-count { font-family:'Fredoka One',cursive; font-size:.95rem; color:var(--green); background:rgba(255,255,255,.85); border-radius:50px; padding:5px 16px; margin-bottom:8px; display:inline-block; }
 
+/* ── AVATAR GALLERY ── */
+.avatar-section { margin-bottom: 14px; }
+.avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.av-btn {
+  font-size: 1.65rem; line-height: 1; border: 3px solid transparent;
+  border-radius: 14px; background: #f5f5f5; padding: 6px 2px;
+  cursor: pointer; text-align: center; transition: all .15s; position: relative;
+}
+.av-btn:hover  { background: #e8f5e9; border-color: var(--green); transform: scale(1.08); }
+.av-btn.chosen { background: #e8f5e9; border-color: var(--green2); box-shadow: 0 0 0 3px rgba(46,204,113,.25); transform: scale(1.1); }
+.av-btn.chosen::after {
+  content: '✓'; position: absolute; top: -6px; right: -6px;
+  background: var(--green2); color: #fff; border-radius: 50%;
+  width: 16px; height: 16px; font-size: .65rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; line-height: 16px;
+}
+
+/* ── MUTE BUTTON (no footer) ── */
+.mute-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; cursor: pointer; color: rgba(255,255,255,.65);
+  font-family: 'Nunito', sans-serif; font-size: .62rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 4px 8px; border-radius: 12px; transition: all .2s;
+}
+.mute-btn:hover, .mute-btn.muted { color: var(--gold); background: rgba(255,215,0,.1); }
+.mute-btn .fbi { font-size: 1.3rem; line-height: 1; }
+
+/* ── QUESTION PROGRESS BADGE ── */
+.q-progress-badge {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(0,0,0,.55); color: #fff; border-radius: 50px;
+  padding: 4px 18px; margin-bottom: 8px;
+  font-family: 'Fredoka One', cursive; font-size: .95rem;
+  border: 2px solid rgba(255,215,0,.5); backdrop-filter: blur(4px);
+  width: 100%; max-width: 390px;
+}
+.q-progress-badge .qpb-num { font-size: 1.3rem; color: var(--gold); }
+.q-progress-badge .qpb-sep { opacity: .6; font-size: .8rem; }
+
 /* ── HOST CONTROL BAR ── */
 /* A barra começa escondida via classe .hidden no HTML.
    Só é mostrada ao anfitrião durante o jogo (gerida pela função go()). */
@@ -325,6 +365,10 @@ body {
   </button>
   <button class="footer-btn" onclick="openFooterModal('modal-history')">
     <span class="fbi">📋</span><span>Histórico</span>
+  </button>
+  <!-- Botão Mute/Unmute — sempre visível no footer -->
+  <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">
+    <span class="fbi" id="muteIcon">🔊</span><span id="muteLbl">Som</span>
   </button>
   <button class="footer-btn" onclick="openFooterModal('modal-about')">
     <span class="fbi">🐑</span><span>Sobre</span>
@@ -461,6 +505,11 @@ body {
     <label class="lbl">👤 Seu Nome (Anfitrião)</label>
     <input class="inp" id="hostName" type="text" placeholder="Nome do anfitrião" maxlength="20">
 
+    <div class="avatar-section">
+      <label class="lbl">🎭 Escolhe o teu Avatar</label>
+      <div class="avatar-grid" id="hostAvatarGrid"></div>
+    </div>
+
     <label class="lbl">⚡ Dificuldade</label>
     <div class="diff-group">
       <div class="dp ae" data-d="facil" onclick="selDiff(this,'ae')">😊 Fácil</div>
@@ -515,6 +564,11 @@ body {
     <label class="lbl">👤 Seu Nome</label>
     <input class="inp" id="joinName" type="text" placeholder="Seu nome" maxlength="20">
 
+    <div class="avatar-section">
+      <label class="lbl">🎭 Escolhe o teu Avatar</label>
+      <div class="avatar-grid" id="joinAvatarGrid"></div>
+    </div>
+
     <button class="btn btn-green" onclick="joinGame()" style="margin:0">🚀 Entrar!</button>
   </div>
 </div>
@@ -536,9 +590,15 @@ body {
 <!-- ══════════════ HOST QUIZ ══════════════ -->
 <!-- [ALTERAÇÃO 1] Anfitrião agora vê a pergunta E pode responder como jogador -->
 <div class="screen" id="s-host-quiz" style="padding-top:56px">
+  <!-- Progresso destacado -->
+  <div class="q-progress-badge" id="hProgressBadge">
+    <span class="qpb-sep">Pergunta</span>
+    <span class="qpb-num" id="hqCurrent">1</span>
+    <span class="qpb-sep">de</span>
+    <span class="qpb-num" id="hqTotal">10</span>
+  </div>
   <div class="quiz-header host-q-header">
-    <span class="qnum" id="hqNum">1/10</span>
-    <div class="prog-out"><div class="prog-in" id="hProg" style="width:10%"></div></div>
+    <div class="prog-out" style="flex:1"><div class="prog-in" id="hProg" style="width:10%"></div></div>
     <div class="timer" id="hTimer">30</div>
   </div>
   <!-- Pergunta -->
@@ -571,9 +631,15 @@ body {
 
 <!-- ══════════════ PLAYER QUIZ ══════════════ -->
 <div class="screen" id="s-quiz">
+  <!-- Progresso destacado -->
+  <div class="q-progress-badge" id="pProgressBadge">
+    <span class="qpb-sep">Pergunta</span>
+    <span class="qpb-num" id="pqCurrent">1</span>
+    <span class="qpb-sep">de</span>
+    <span class="qpb-num" id="pqTotal">10</span>
+  </div>
   <div class="quiz-header">
-    <span class="qnum" id="pqNum">1/10</span>
-    <div class="prog-out"><div class="prog-in" id="pProg" style="width:10%"></div></div>
+    <div class="prog-out" style="flex:1"><div class="prog-in" id="pProg" style="width:10%"></div></div>
     <div class="timer" id="pTimer">30</div>
   </div>
   <div class="qcard">
@@ -778,6 +844,7 @@ let role = null; // 'host' | 'player'
 let myPin = null;
 let myId = null;
 let myName = '';
+let myAvatar = '🐑'; // avatar escolhido pelo utilizador
 let myScore = 0;
 let myLives = 3;
 let myStreak = 0;
@@ -785,10 +852,16 @@ let diffSel = 'facil';
 let qtySel = 10;
 let answered = false;
 let adminData = null;
-// [ALTERAÇÃO 1] Estado do anfitrião como jogador
+// Estado do anfitrião como jogador
 let hostScore = 0;
 let hostLives = 3;
 let hostStreak = 0;
+// Avatar do anfitrião (pode ser diferente do jogador se for outra instância)
+let hostAvatar = '🐑';
+// Áudio
+let audioMuted = false;
+// Heartbeat — referência para poder cancelar
+let heartbeatInterval = null;
 
 // ═══════════════════════════════════════════════════════
 // SCREEN NAV
@@ -797,6 +870,9 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 's-ranking') fetchRanking();
+  // Inicializar galeria de avatares ao navegar para as telas de setup
+  if (id === 's-host-setup') buildAvatarGrid('hostAvatarGrid', 'host');
+  if (id === 's-join')       buildAvatarGrid('joinAvatarGrid', 'player');
 
   // ── Barra de controlo do anfitrião ──────────────────────────────────────
   // Regra: a barra aparece em TODOS os ecrãs do host EXCETO no ecrã final.
@@ -859,12 +935,12 @@ function createGame() {
   const name = document.getElementById('hostName').value.trim();
   if (!name) { showToast('Digite seu nome!'); return; }
   myName = name;
+  myAvatar = hostAvatar; // avatar do anfitrião
   role = 'host';
-  myId = 'host'; // [ALTERAÇÃO 1] anfitrião tem ID 'host' como jogador
-  // Reset estado do anfitrião-jogador
+  myId = 'host';
   hostScore = 0; hostLives = 3; hostStreak = 0;
   connectWS(() => {
-    send({ type: 'create_game', name, options: {
+    send({ type: 'create_game', name, avatar: hostAvatar, options: {
       difficulty: diffSel, qty: qtySel,
       category: document.getElementById('catSel').value
     }});
@@ -895,7 +971,7 @@ function joinGame() {
   myName = name;
   role = 'player';
   connectWS(() => {
-    send({ type: 'join_game', pin, name });
+    send({ type: 'join_game', pin, name, avatar: myAvatar });
   });
 }
 
@@ -1030,6 +1106,7 @@ function handleMsg(msg) {
     // BOTH: reveal
     case 'reveal':
       hideFeedback();
+      stopHeartbeat(); // parar tensão do tempo
       if (role === 'host') {
         // renderHostReveal chama go('s-host-reveal') que mostra o botão "Próxima" automaticamente
         renderHostReveal(msg);
@@ -1096,31 +1173,34 @@ function handleMsg(msg) {
 // ═══════════════════════════════════════════════════════
 function renderPlayersGrid(players) {
   const g = document.getElementById('playersGrid');
-  // [ALTERAÇÃO 1] Filtrar o anfitrião da lista de jogadores na sala de espera
   const realPlayers = players.filter(p => !p.isHost);
-  g.innerHTML = realPlayers.map(p => `<div class="player-chip">🐑 ${p.name}</div>`).join('');
+  g.innerHTML = realPlayers.map(p =>
+    `<div class="player-chip">${p.avatar||'🐑'} ${p.name}</div>`
+  ).join('');
 }
 
 function renderHostQuestion(msg) {
-  document.getElementById('hqNum').textContent = `${msg.index+1}/${msg.total}`;
+  // Progresso destacado
+  document.getElementById('hqCurrent').textContent = msg.index + 1;
+  document.getElementById('hqTotal').textContent   = msg.total;
   document.getElementById('hProg').style.width = `${((msg.index+1)/msg.total)*100}%`;
-  document.getElementById('hCat').textContent = catLabel(msg.cat);
+  document.getElementById('hCat').textContent  = catLabel(msg.cat);
   document.getElementById('hIcon').textContent = msg.icon;
-  document.getElementById('hQ').textContent = msg.q;
+  document.getElementById('hQ').textContent    = msg.q;
   document.getElementById('answeredCount').textContent = `0/${msg.players?.length||1} responderam`;
-  // [ALTERAÇÃO 1] Popular botões de resposta do anfitrião
   const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
   hBtns.forEach((b, i) => {
     b.querySelector('.at').textContent = msg.answers[i];
     b.className = 'ans-btn';
     b.disabled = false;
   });
-  // Atualizar scorebar do anfitrião
   document.getElementById('hSbName').textContent = (myName||'Anfitrião').substring(0,12);
   updateHostPlayerScorebar();
-  const lb = document.getElementById('hostLiveLb');
-  lb.innerHTML = '<div style="color:#888;text-align:center;font-size:.85rem">Aguardando respostas...</div>';
+  document.getElementById('hostLiveLb').innerHTML =
+    '<div style="color:#888;text-align:center;font-size:.85rem">Aguardando respostas...</div>';
+  stopHeartbeat(); // garantir que o heartbeat anterior foi parado
   go('s-host-quiz');
+  playQuestionEntry(); // som de entrada de pergunta
 }
 
 function renderHostReveal(msg) {
@@ -1154,11 +1234,13 @@ function renderHostGameOver(lb) {
 }
 
 function renderPlayerQuestion(msg) {
-  document.getElementById('pqNum').textContent = `${msg.index+1}/${msg.total}`;
+  // Progresso destacado
+  document.getElementById('pqCurrent').textContent = msg.index + 1;
+  document.getElementById('pqTotal').textContent   = msg.total;
   document.getElementById('pProg').style.width = `${((msg.index+1)/msg.total)*100}%`;
-  document.getElementById('pCat').textContent = catLabel(msg.cat);
+  document.getElementById('pCat').textContent  = catLabel(msg.cat);
   document.getElementById('pIcon').textContent = msg.icon;
-  document.getElementById('pQ').textContent = msg.q;
+  document.getElementById('pQ').textContent    = msg.q;
   document.getElementById('pSbName').textContent = myName.substring(0,12);
   // IMPORTANTE: usar #pAnswers para não apanhar os botões do ecrã do host
   document.querySelectorAll('#pAnswers .ans-btn').forEach((b, i) => {
@@ -1167,7 +1249,9 @@ function renderPlayerQuestion(msg) {
     b.disabled = false;
   });
   updatePlayerScorebar();
+  stopHeartbeat();
   go('s-quiz');
+  playQuestionEntry();
 }
 
 function renderPlayerReveal(msg) {
@@ -1196,10 +1280,12 @@ function renderPlayerGameOver(lb) {
 
 function renderLb(el, lb) { el.innerHTML = renderLbHtml(lb); }
 function renderLbHtml(lb) {
-  return lb.map((p,i) => `
+  return lb.map((p, i) => `
     <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
       <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
-      <span class="lb-name">${p.name}${p.isHost?' 👑':''}</span>
+      <span class="lb-name">
+        <span style="font-size:1.2rem;vertical-align:middle;margin-right:4px">${p.avatar||'🐑'}</span>${p.name}${p.isHost?' 👑':''}
+      </span>
       <span class="lb-pts">${p.score?.toLocaleString()}</span>
     </div>`).join('');
 }
@@ -1209,7 +1295,16 @@ function updateTimer(t) {
     const el = document.getElementById(id);
     if (el) { el.textContent = t; el.classList.toggle('urgent', t <= 5); }
   });
-  if (t <= 5) playTick();
+  if (t <= 10 && t > 0) {
+    // Tensão: iniciar heartbeat se ainda não estiver ativo
+    if (!heartbeatInterval) startHeartbeat();
+  } else if (t > 10) {
+    // Tick normal de relógio
+    stopHeartbeat();
+    playTick();
+  } else if (t <= 0) {
+    stopHeartbeat();
+  }
 }
 
 function updatePlayerScorebar() {
@@ -1275,7 +1370,10 @@ async function fetchRanking() {
     el.innerHTML = r.map((e,i) => `
       <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
         <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
-        <span class="lb-name"><strong>${e.name}</strong><br><small style="opacity:.7">${e.date}</small></span>
+        <span class="lb-name">
+          <span style="font-size:1.1rem;vertical-align:middle;margin-right:4px">${e.avatar||'🐑'}</span>
+          <strong>${e.name}</strong><br><small style="opacity:.7">${e.date}</small>
+        </span>
         <span class="lb-pts">${e.score?.toLocaleString()}</span>
       </div>`).join('');
   } catch(e) {}
@@ -1422,10 +1520,9 @@ function saveGameToHistory(leaderboard) {
     const history = JSON.parse(localStorage.getItem('oi_history') || '[]');
     const entry = {
       date: new Date().toLocaleString('pt-PT'),
-      players: leaderboard.map(p => ({ name: p.name, score: p.score })),
+      players: leaderboard.map(p => ({ name: p.name, score: p.score, avatar: p.avatar || '🐑' })),
     };
-    history.unshift(entry); // mais recente primeiro
-    // Guardar máximo 20 partidas
+    history.unshift(entry);
     localStorage.setItem('oi_history', JSON.stringify(history.slice(0, 20)));
   } catch(e) {}
 }
@@ -1444,7 +1541,7 @@ function renderHistoryModal() {
         ${entry.players.slice(0,5).map((p,i) => `
           <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}" style="padding:7px 10px;margin-bottom:4px">
             <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
-            <span class="lb-name">${p.name}</span>
+            <span class="lb-name"><span style="margin-right:4px">${p.avatar||'🐑'}</span>${p.name}</span>
             <span class="lb-pts">${p.score?.toLocaleString()}</span>
           </div>`).join('')}
       </div>`).join('');
@@ -1493,26 +1590,139 @@ function resetSuggestForm() {
   document.getElementById('suggestForm').style.display = '';
   document.getElementById('suggestThanks').style.display = 'none';
 }
+// ═══════════════════════════════════════════════════════
+// AVATARES
+// ═══════════════════════════════════════════════════════
+const AVATARS = [
+  // Rostos diversidade tons de pele
+  '👦🏻','👧🏻','👦🏽','👧🏽','👦🏿','👧🏿',
+  // Adultos / idosos
+  '👨🏻','👩🏻','👨🏽','👩🏽','👴🏼','👵🏼',
+  // Animais / especiais
+  '🐑','🦁','🦊',
+];
+
+function buildAvatarGrid(gridId, stateKey) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = AVATARS.map((av, i) => `
+    <button class="av-btn${(stateKey === 'host' ? hostAvatar : myAvatar) === av ? ' chosen' : ''}"
+            onclick="selectAvatar('${av}','${gridId}','${stateKey}')"
+            title="${av}">${av}</button>
+  `).join('');
+}
+
+function selectAvatar(av, gridId, stateKey) {
+  if (stateKey === 'host') hostAvatar = av;
+  else myAvatar = av;
+  // Atualizar visual
+  document.querySelectorAll(`#${gridId} .av-btn`).forEach((b, i) => {
+    b.classList.toggle('chosen', AVATARS[i] === av);
+  });
+  playClick();
+}
+
+// ═══════════════════════════════════════════════════════
+// ÁUDIO IMERSIVO
+// ═══════════════════════════════════════════════════════
 let actx = null;
+
 function getAC() {
-  if (!actx) { try { actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {} }
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  // Resumir contexto se suspenso (política de autoplay)
+  if (actx && actx.state === 'suspended') actx.resume();
   return actx;
 }
-function tone(f,t='sine',d=0.1,v=0.25,delay=0) {
-  const c = getAC(); if(!c) return;
+
+function tone(f, t = 'sine', d = 0.1, v = 0.25, delay = 0) {
+  if (audioMuted) return;
+  const c = getAC(); if (!c) return;
   const now = c.currentTime + delay;
   const o = c.createOscillator(), g = c.createGain();
   o.connect(g); g.connect(c.destination);
-  o.type=t; o.frequency.setValueAtTime(f,now);
-  g.gain.setValueAtTime(v,now); g.gain.exponentialRampToValueAtTime(.001,now+d);
-  o.start(now); o.stop(now+d);
+  o.type = t; o.frequency.setValueAtTime(f, now);
+  g.gain.setValueAtTime(v, now);
+  g.gain.exponentialRampToValueAtTime(.001, now + d);
+  o.start(now); o.stop(now + d);
 }
-function playCorrect() { tone(523,'sine',.1); tone(659,'sine',.1,.25,.1); tone(784,'sine',.2,.25,.2); }
-function playWrong() { tone(300,'sawtooth',.15); tone(200,'sawtooth',.2,.25,.15); }
-function playTick() { tone(800,'square',.05,.1); }
+
+// Sons existentes
+function playCorrect()  { tone(523,'sine',.1); tone(659,'sine',.1,.25,.1); tone(784,'sine',.2,.25,.2); }
+function playWrong()    { tone(300,'sawtooth',.15); tone(200,'sawtooth',.2,.25,.15); }
 function playComplete() { [523,587,659,698,784,880,988,1047].forEach((f,i)=>tone(f,'sine',.15,.22,i*.1)); }
-function playClick() { tone(440,'sine',.07,.12); }
-function playJoin() { tone(600,'sine',.08,.2); tone(800,'sine',.08,.2,.1); }
+function playClick()    { tone(440,'sine',.07,.12); }
+function playJoin()     { tone(600,'sine',.08,.2); tone(800,'sine',.08,.2,.1); }
+
+// Som de entrada de pergunta — impacto + sweep ascendente
+function playQuestionEntry() {
+  if (audioMuted) return;
+  const c = getAC(); if (!c) return;
+  // Impacto grave
+  tone(80, 'sine', .25, .4);
+  // Sweep ascendente (whoosh)
+  const now = c.currentTime + .05;
+  const o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(200, now);
+  o.frequency.exponentialRampToValueAtTime(800, now + .18);
+  g.gain.setValueAtTime(.18, now);
+  g.gain.exponentialRampToValueAtTime(.001, now + .22);
+  o.start(now); o.stop(now + .25);
+}
+
+// Tique-taque tenso (batida de coração) — chamado quando timeLeft <= 10
+function playHeartbeat() {
+  if (audioMuted) return;
+  // Dois pulsos rápidos imitando batimento cardíaco
+  tone(90, 'sine', .08, .5, 0);
+  tone(75, 'sine', .06, .35, .12);
+}
+
+// Tick normal (timeLeft > 10)
+function playTick() { tone(800, 'square', .05, .1); }
+
+// Iniciar/parar heartbeat contínuo
+function startHeartbeat() {
+  stopHeartbeat();
+  // Tocar imediatamente e depois a cada ~600ms
+  playHeartbeat();
+  heartbeatInterval = setInterval(playHeartbeat, 620);
+}
+function stopHeartbeat() {
+  if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+}
+
+// Mute toggle
+function toggleMute() {
+  audioMuted = !audioMuted;
+  const btn  = document.getElementById('muteBtn');
+  const icon = document.getElementById('muteIcon');
+  const lbl  = document.getElementById('muteLbl');
+  btn.classList.toggle('muted', audioMuted);
+  icon.textContent = audioMuted ? '🔇' : '🔊';
+  lbl.textContent  = audioMuted ? 'Mudo' : 'Som';
+  if (audioMuted) stopHeartbeat(); // parar heartbeat se mutado
+  // Persistir preferência
+  try { localStorage.setItem('oi_muted', audioMuted ? '1' : '0'); } catch(e) {}
+}
+
+// Restaurar preferência de mute no arranque
+(function() {
+  try {
+    if (localStorage.getItem('oi_muted') === '1') {
+      audioMuted = true;
+      const btn  = document.getElementById('muteBtn');
+      const icon = document.getElementById('muteIcon');
+      const lbl  = document.getElementById('muteLbl');
+      if (btn)  btn.classList.add('muted');
+      if (icon) icon.textContent = '🔇';
+      if (lbl)  lbl.textContent  = 'Mudo';
+    }
+  } catch(e) {}
+})();
 
 // ═══════════════════════════════════════════════════════
 // CONFETTI
