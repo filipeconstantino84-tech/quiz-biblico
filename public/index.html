@@ -242,6 +242,60 @@ body {
 .host-lb { width:100%; max-width:420px; background:rgba(255,255,255,.9); border-radius:20px; padding:14px; max-height:280px; overflow-y:auto; border:2px solid rgba(255,215,0,.4); margin-bottom:10px; }
 .answered-count { font-family:'Fredoka One',cursive; font-size:.95rem; color:var(--green); background:rgba(255,255,255,.85); border-radius:50px; padding:5px 16px; margin-bottom:8px; display:inline-block; }
 
+/* ── HOST CONTROL BAR (ALTERAÇÃO 1) ── */
+.host-ctrl-bar {
+  display: none; /* mostrado só ao anfitrião durante o quiz */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: linear-gradient(90deg, rgba(26,26,46,.95), rgba(22,33,62,.95));
+  padding: 6px 12px; border-bottom: 2px solid var(--gold);
+  display: flex; align-items: center; gap: 8px;
+  backdrop-filter: blur(8px);
+}
+.host-ctrl-bar.hidden { display: none !important; }
+.hcb-pin { font-family:'Fredoka One',cursive; color: var(--gold); font-size:.85rem; letter-spacing:.1em; }
+.hcb-btn { padding: 6px 14px; border:none; border-radius:50px; font-family:'Fredoka One',cursive; font-size:.85rem; cursor:pointer; transition:all .14s; }
+.hcb-start { background: linear-gradient(180deg,#4cde82,#27ae60); color:#fff; box-shadow:0 3px 0 #1e8449; }
+.hcb-next  { background: linear-gradient(180deg,#5dade2,#2980b9); color:#fff; box-shadow:0 3px 0 #1a6391; }
+.hcb-btn:active { transform:translateY(2px); box-shadow:none !important; }
+.hcb-spacer { flex:1; }
+.hcb-answered { font-family:'Fredoka One',cursive; font-size:.8rem; color:rgba(255,255,255,.75); }
+
+/* ── FOOTER (ALTERAÇÃO 2) ── */
+.app-footer {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+  background: linear-gradient(90deg, rgba(26,26,46,.96), rgba(22,33,62,.96));
+  border-top: 2px solid rgba(255,215,0,.4);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 8px 4px; backdrop-filter: blur(8px);
+  height: 54px;
+}
+.footer-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; cursor: pointer; color: rgba(255,255,255,.65);
+  font-family: 'Nunito', sans-serif; font-size: .62rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em; padding: 4px 8px; border-radius: 12px;
+  transition: all .2s;
+}
+.footer-btn:hover, .footer-btn.active { color: var(--gold); background: rgba(255,215,0,.1); }
+.footer-btn .fbi { font-size: 1.3rem; line-height: 1; }
+
+/* ── MODAL BASE (ALTERAÇÃO 2) ── */
+.modal-ov {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.75); z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+.modal-ov.show { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: #fff; border-radius: 28px 28px 0 0; padding: 20px 18px 80px;
+  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+  transform: translateY(100%); transition: transform .35s cubic-bezier(.34,1.1,.64,1);
+}
+.modal-ov.show .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-family:'Fredoka One',cursive; font-size:1.4rem; color:var(--dark); margin-bottom:14px; text-align:center; }
+
 @media(max-height:680px) {
   .qcard { min-height:100px; padding:13px; }
   .ans-btn { padding:9px 12px; }
@@ -251,6 +305,119 @@ body {
 <body>
 <!-- bg -->
 <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+
+<!-- ══════════════ HOST CONTROL BAR (ALTERAÇÃO 1) ══════════════ -->
+<!-- Barra de controlo do anfitrião: visível só durante o jogo e só para o anfitrião -->
+<div class="host-ctrl-bar hidden" id="hostCtrlBar">
+  <span class="hcb-pin" id="hcbPin">📌 ----</span>
+  <div class="hcb-spacer"></div>
+  <span class="hcb-answered" id="hcbAnswered"></span>
+  <button class="hcb-btn hcb-start" id="hcbStartBtn" onclick="hostStartGame()" style="display:none">▶️ Iniciar</button>
+  <button class="hcb-btn hcb-next" id="hcbNextBtn" onclick="hostNext()" style="display:none">➡️ Próxima</button>
+</div>
+
+<!-- ══════════════ FOOTER (ALTERAÇÃO 2) ══════════════ -->
+<div class="app-footer" id="appFooter">
+  <button class="footer-btn" onclick="openFooterModal('modal-admin')">
+    <span class="fbi">⚙️</span><span>Admin</span>
+  </button>
+  <button class="footer-btn" onclick="openFooterModal('modal-history')">
+    <span class="fbi">📋</span><span>Histórico</span>
+  </button>
+  <button class="footer-btn" onclick="openFooterModal('modal-about')">
+    <span class="fbi">🐑</span><span>Sobre</span>
+  </button>
+  <button class="footer-btn" onclick="openFooterModal('modal-suggest')">
+    <span class="fbi">💡</span><span>Sugerir</span>
+  </button>
+</div>
+
+<!-- ══════════════ MODAL: ADMIN LOGIN (ALTERAÇÃO 2) ══════════════ -->
+<div class="modal-ov" id="modal-admin" onclick="closeModalOv(event,this)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Área Admin</div>
+    <label class="lbl">🔐 Senha Admin</label>
+    <input class="inp" id="footerAdminPass" type="password" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')footerAdminLogin()">
+    <button class="btn btn-blue" onclick="footerAdminLogin()" style="margin:0">Entrar</button>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: HISTÓRICO (ALTERAÇÃO 2) ══════════════ -->
+<div class="modal-ov" id="modal-history" onclick="closeModalOv(event,this)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 Histórico de Partidas</div>
+    <div id="historyList"></div>
+    <button class="btn btn-red" onclick="clearHistory()" style="margin-top:12px;max-width:200px;font-size:.9rem;padding:10px">🗑️ Limpar Histórico</button>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: SOBRE (ALTERAÇÃO 2) ══════════════ -->
+<div class="modal-ov" id="modal-about" onclick="closeModalOv(event,this)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🐑 Ovelha Inteligente</div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:3rem">📖✨</div>
+      <p style="color:#555;font-size:.95rem;line-height:1.6;margin-top:10px">
+        <strong>Ovelha Inteligente</strong> é um quiz bíblico multiplayer em tempo real.<br><br>
+        Cria ou junta-te a uma sala com amigos e família, responde a perguntas sobre a Bíblia e vê quem é o mais sábio!<br><br>
+        <span style="color:var(--pink);font-weight:800">O anfitrião também joga</span> — não é apenas um moderador, faz parte da competição!
+      </p>
+    </div>
+    <div style="background:#f9f9f9;border-radius:14px;padding:12px;font-size:.85rem;color:#666">
+      <div>🎮 Multiplayer em tempo real via WebSocket</div>
+      <div style="margin-top:6px">⏱️ Pontuação por velocidade de resposta</div>
+      <div style="margin-top:6px">🔥 Bónus por sequências de acertos</div>
+      <div style="margin-top:6px">❤️ Sistema de vidas — 3 erros e sais!</div>
+      <div style="margin-top:6px">📚 Categorias: AT, NT, Personagens, Milagres</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: SUGERIR PERGUNTA (ALTERAÇÃO 2) ══════════════ -->
+<div class="modal-ov" id="modal-suggest" onclick="closeModalOv(event,this)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💡 Sugerir Pergunta</div>
+    <div id="suggestForm">
+      <label class="lbl">📝 Pergunta</label>
+      <input class="inp" id="sug-q" placeholder="Escreva a pergunta bíblica...">
+      <label class="lbl">🔵 Opção A</label>
+      <input class="inp" id="sug-a0" placeholder="Opção A">
+      <label class="lbl">🟠 Opção B</label>
+      <input class="inp" id="sug-a1" placeholder="Opção B">
+      <label class="lbl">🟣 Opção C</label>
+      <input class="inp" id="sug-a2" placeholder="Opção C">
+      <label class="lbl">🟢 Opção D</label>
+      <input class="inp" id="sug-a3" placeholder="Opção D">
+      <label class="lbl">✅ Resposta Correta</label>
+      <select class="sel" id="sug-correct">
+        <option value="0">A</option>
+        <option value="1">B</option>
+        <option value="2">C</option>
+        <option value="3">D</option>
+      </select>
+      <label class="lbl">📖 Referência Bíblica (ex: João 3:16)</label>
+      <input class="inp" id="sug-ref" placeholder="Livro capítulo:versículo">
+      <label class="lbl">🏷️ Categoria</label>
+      <select class="sel" id="sug-cat">
+        <option value="ot">Escrituras Hebraicas (AT)</option>
+        <option value="nt">Escrituras Gregas Cristãs (NT)</option>
+        <option value="personagens">Personagens</option>
+        <option value="milagres">Milagres</option>
+      </select>
+      <button class="btn btn-green" onclick="submitSuggestion()" style="margin:0">📤 Enviar Sugestão</button>
+    </div>
+    <div id="suggestThanks" style="display:none;text-align:center;padding:20px">
+      <div style="font-size:3rem">🙏</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--dark);margin:10px 0">Obrigado!</div>
+      <p style="color:#666;font-size:.9rem">A sua sugestão foi guardada e será analisada pelo administrador.</p>
+      <button class="btn btn-blue" onclick="resetSuggestForm()" style="margin-top:10px;max-width:200px">+ Outra Sugestão</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════ HOME ══════════════ -->
 <div class="screen active" id="s-home">
@@ -282,7 +449,6 @@ body {
   <button class="btn btn-pink" onclick="go('s-host-setup')">🐑 Criar Jogo (Anfitrião)</button>
   <button class="btn btn-green" onclick="go('s-join')">🎮 Ingressar num Jogo</button>
   <button class="btn btn-gold" onclick="go('s-ranking')">🏆 Ranking Global</button>
-  <button class="btn btn-blue" onclick="go('s-admin-login')" style="max-width:200px;font-size:1rem;padding:10px">⚙️ Admin</button>
 </div>
 
 <!-- ══════════════ HOST SETUP ══════════════ -->
@@ -366,21 +532,39 @@ body {
 </div>
 
 <!-- ══════════════ HOST QUIZ ══════════════ -->
-<div class="screen" id="s-host-quiz">
+<!-- [ALTERAÇÃO 1] Anfitrião agora vê a pergunta E pode responder como jogador -->
+<div class="screen" id="s-host-quiz" style="padding-top:56px">
   <div class="quiz-header host-q-header">
     <span class="qnum" id="hqNum">1/10</span>
     <div class="prog-out"><div class="prog-in" id="hProg" style="width:10%"></div></div>
     <div class="timer" id="hTimer">30</div>
   </div>
+  <!-- Pergunta -->
   <div class="qcard">
     <div class="cat-badge" id="hCat">Bíblia</div>
     <div class="q-icon" id="hIcon">📖</div>
     <div class="q-text" id="hQ">...</div>
   </div>
-  <div class="answered-count" id="answeredCount">0 responderam</div>
-  <div class="host-lb" id="hostLiveLb"></div>
-  <!-- Reveal next button hidden until answer revealed -->
-  <button class="btn btn-green" id="nextBtn" onclick="hostNext()" style="display:none">➡️ Próxima Pergunta</button>
+  <!-- [ALTERAÇÃO 1] Respostas para o anfitrião responder como jogador -->
+  <div class="answers" id="hAnswers">
+    <button class="ans-btn" onclick="sendAnswer(0)"><span class="letter">A</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(1)"><span class="letter">B</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(2)"><span class="letter">C</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(3)"><span class="letter">D</span><span class="at"></span></button>
+  </div>
+  <!-- [ALTERAÇÃO 1] Scorebar do anfitrião como jogador -->
+  <div class="scorebar">
+    <div>
+      <div class="sb-name" id="hSbName">Anfitrião</div>
+      <div class="sb-pts"><span id="hSbPts">0</span> pts</div>
+    </div>
+    <div class="hearts" id="hHearts">
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+    </div>
+    <div class="streak-badge" id="hStreak"></div>
+  </div>
+  <div class="answered-count" id="answeredCount" style="margin-top:6px">0 responderam</div>
+  <div class="host-lb" id="hostLiveLb" style="margin-top:6px"></div>
 </div>
 
 <!-- ══════════════ PLAYER QUIZ ══════════════ -->
@@ -414,12 +598,12 @@ body {
 </div>
 
 <!-- ══════════════ HOST REVEAL ══════════════ -->
-<div class="screen" id="s-host-reveal">
+<!-- [ALTERAÇÃO 1] Botão "Próxima" movido para a barra de controlo do host -->
+<div class="screen" id="s-host-reveal" style="padding-top:56px">
   <div class="title" style="font-size:1.5rem;margin-bottom:10px" id="revealTitle">Resposta Correta!</div>
   <div class="expl-box" id="revealExpl" style="display:none"></div>
   <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar Atual</div>
   <div style="width:100%;max-width:390px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px" id="revealLb"></div>
-  <button class="btn btn-green" onclick="hostNext()">➡️ Próxima Pergunta</button>
 </div>
 
 <!-- ══════════════ PLAYER REVEAL ══════════════ -->
@@ -599,6 +783,10 @@ let diffSel = 'facil';
 let qtySel = 10;
 let answered = false;
 let adminData = null;
+// [ALTERAÇÃO 1] Estado do anfitrião como jogador
+let hostScore = 0;
+let hostLives = 3;
+let hostStreak = 0;
 
 // ═══════════════════════════════════════════════════════
 // SCREEN NAV
@@ -607,6 +795,23 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 's-ranking') fetchRanking();
+  // [ALTERAÇÃO 1] Mostrar barra do anfitrião apenas nos ecrãs de jogo do host
+  const hostScreens = ['s-host-lobby','s-host-quiz','s-host-reveal','s-host-over'];
+  const bar = document.getElementById('hostCtrlBar');
+  if (role === 'host' && hostScreens.includes(id)) {
+    bar.classList.remove('hidden');
+    // Barra de iniciar no lobby; barra de próxima durante reveal
+    if (id === 's-host-lobby') {
+      document.getElementById('hcbStartBtn').style.display = '';
+      document.getElementById('hcbNextBtn').style.display = 'none';
+    } else if (id === 's-host-over') {
+      bar.classList.add('hidden');
+    }
+  } else if (!hostScreens.includes(id)) {
+    bar.classList.add('hidden');
+  }
+  // [ALTERAÇÃO 2] Fechar modais ao navegar
+  document.querySelectorAll('.modal-ov').forEach(m => m.classList.remove('show'));
   playClick();
 }
 
@@ -633,6 +838,9 @@ function createGame() {
   if (!name) { showToast('Digite seu nome!'); return; }
   myName = name;
   role = 'host';
+  myId = 'host'; // [ALTERAÇÃO 1] anfitrião tem ID 'host' como jogador
+  // Reset estado do anfitrião-jogador
+  hostScore = 0; hostLives = 3; hostStreak = 0;
   connectWS(() => {
     send({ type: 'create_game', name, options: {
       difficulty: diffSel, qty: qtySel,
@@ -643,11 +851,15 @@ function createGame() {
 
 function hostStartGame() {
   send({ type: 'start_game' });
+  // [ALTERAÇÃO 1] Esconder botão de iniciar após clicar
+  document.getElementById('hcbStartBtn').style.display = 'none';
 }
 
 function hostNext() {
   send({ type: 'next_question' });
-  document.getElementById('nextBtn').style.display = 'none';
+  // [ALTERAÇÃO 1] Esconder botão "Próxima" após clicar
+  document.getElementById('hcbNextBtn').style.display = 'none';
+  document.getElementById('nextBtn') && (document.getElementById('nextBtn').style.display = 'none');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -668,7 +880,9 @@ function joinGame() {
 function sendAnswer(idx) {
   if (answered) return;
   answered = true;
-  document.querySelectorAll('.ans-btn').forEach(b => { b.classList.add('dim'); b.disabled = true; });
+  // [ALTERAÇÃO 1] Desabilitar botões do ecrã correto (host ou player)
+  const container = role === 'host' ? '#hAnswers .ans-btn' : '.ans-btn';
+  document.querySelectorAll(container).forEach(b => { b.classList.add('dim'); b.disabled = true; });
   send({ type: 'answer', answer: idx });
   playClick();
 }
@@ -685,6 +899,11 @@ function handleMsg(msg) {
       document.getElementById('pinDisplay').textContent = msg.pin;
       document.getElementById('playerCount').textContent = '0';
       document.getElementById('playersGrid').innerHTML = '';
+      // [ALTERAÇÃO 1] Mostrar barra de controlo do anfitrião e atualizar PIN
+      document.getElementById('hcbPin').textContent = '📌 ' + msg.pin;
+      document.getElementById('hostCtrlBar').classList.remove('hidden');
+      document.getElementById('hcbStartBtn').style.display = '';
+      document.getElementById('hcbNextBtn').style.display = 'none';
       go('s-host-lobby');
       break;
 
@@ -711,6 +930,8 @@ function handleMsg(msg) {
         const total = msg.players.length;
         const answered_ = msg.players.filter(p => p.answered).length;
         document.getElementById('answeredCount').textContent = `${answered_}/${total} responderam`;
+        // [ALTERAÇÃO 1] Atualizar contador na barra de controlo
+        document.getElementById('hcbAnswered').textContent = `${answered_}/${total} resp.`;
         renderHostLiveLb(msg.players);
       }
       break;
@@ -741,7 +962,13 @@ function handleMsg(msg) {
     case 'question':
       hideCountdown();
       answered = false;
-      if (role === 'host') renderHostQuestion(msg);
+      if (role === 'host') {
+        renderHostQuestion(msg);
+        // [ALTERAÇÃO 1] Esconder botão "Próxima" e mostrar respostas para anfitrião jogar
+        document.getElementById('hcbNextBtn').style.display = 'none';
+        document.getElementById('hcbStartBtn').style.display = 'none';
+        document.getElementById('hcbAnswered').textContent = `0/${msg.players?.length||1} resp.`;
+      }
       else renderPlayerQuestion(msg);
       break;
 
@@ -749,20 +976,33 @@ function handleMsg(msg) {
       updateTimer(msg.timeLeft);
       break;
 
-    // PLAYER: answer result
+    // PLAYER (e ANFITRIÃO como jogador): resultado da resposta
     case 'answer_result':
-      myScore = msg.score;
-      myLives = msg.lives;
-      myStreak = msg.streak;
-      updatePlayerScorebar();
-      if (msg.correct) {
-        playCorrect();
-        showFeedback(true, msg.pts, msg.streak);
+      if (msg.isHostPlayer || role === 'host') {
+        // [ALTERAÇÃO 1] Anfitrião recebeu resultado como jogador
+        hostScore = msg.score;
+        hostLives = msg.lives;
+        hostStreak = msg.streak;
+        updateHostPlayerScorebar();
+        if (msg.correct) { playCorrect(); showFeedback(true, msg.pts, msg.streak); }
+        else { playWrong(); showFeedback(false, 0, 0); }
+        // Marcar respostas no painel do host
+        const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
+        // O host já sabe a correta pelo campo 'correct' da pergunta — não reexibimos aqui
       } else {
-        playWrong();
-        showFeedback(false, 0, 0);
-        if (msg.lives <= 0) {
-          setTimeout(() => { hideFeedback(); document.getElementById('elimOv').classList.add('show'); }, 1200);
+        myScore = msg.score;
+        myLives = msg.lives;
+        myStreak = msg.streak;
+        updatePlayerScorebar();
+        if (msg.correct) {
+          playCorrect();
+          showFeedback(true, msg.pts, msg.streak);
+        } else {
+          playWrong();
+          showFeedback(false, 0, 0);
+          if (msg.lives <= 0) {
+            setTimeout(() => { hideFeedback(); document.getElementById('elimOv').classList.add('show'); }, 1200);
+          }
         }
       }
       break;
@@ -770,7 +1010,19 @@ function handleMsg(msg) {
     // BOTH: reveal
     case 'reveal':
       hideFeedback();
-      if (role === 'host') renderHostReveal(msg);
+      if (role === 'host') {
+        renderHostReveal(msg);
+        // [ALTERAÇÃO 1] Mostrar botão "Próxima" na barra de controlo
+        document.getElementById('hcbNextBtn').style.display = '';
+        document.getElementById('hcbAnswered').textContent = '';
+        // Destacar resposta correta nas opções do anfitrião
+        const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
+        hBtns.forEach((b, i) => {
+          b.disabled = true;
+          if (i === msg.correct) b.classList.add('correct');
+          else b.classList.add('dim');
+        });
+      }
       else renderPlayerReveal(msg);
       break;
 
@@ -793,6 +1045,10 @@ function handleMsg(msg) {
       hideCountdown();
       playComplete();
       launchConfetti();
+      // [ALTERAÇÃO 1] Esconder barra de controlo do host
+      document.getElementById('hostCtrlBar').classList.add('hidden');
+      // [ALTERAÇÃO 2] Guardar partida no histórico (localStorage)
+      saveGameToHistory(msg.leaderboard);
       if (role === 'host') renderHostGameOver(msg.leaderboard);
       else renderPlayerGameOver(msg.leaderboard);
       break;
@@ -823,7 +1079,9 @@ function handleMsg(msg) {
 // ═══════════════════════════════════════════════════════
 function renderPlayersGrid(players) {
   const g = document.getElementById('playersGrid');
-  g.innerHTML = players.map(p => `<div class="player-chip">🐑 ${p.name}</div>`).join('');
+  // [ALTERAÇÃO 1] Filtrar o anfitrião da lista de jogadores na sala de espera
+  const realPlayers = players.filter(p => !p.isHost);
+  g.innerHTML = realPlayers.map(p => `<div class="player-chip">🐑 ${p.name}</div>`).join('');
 }
 
 function renderHostQuestion(msg) {
@@ -832,8 +1090,17 @@ function renderHostQuestion(msg) {
   document.getElementById('hCat').textContent = catLabel(msg.cat);
   document.getElementById('hIcon').textContent = msg.icon;
   document.getElementById('hQ').textContent = msg.q;
-  document.getElementById('answeredCount').textContent = `0/${msg.players?.length||0} responderam`;
-  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('answeredCount').textContent = `0/${msg.players?.length||1} responderam`;
+  // [ALTERAÇÃO 1] Popular botões de resposta do anfitrião
+  const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
+  hBtns.forEach((b, i) => {
+    b.querySelector('.at').textContent = msg.answers[i];
+    b.className = 'ans-btn';
+    b.disabled = false;
+  });
+  // Atualizar scorebar do anfitrião
+  document.getElementById('hSbName').textContent = (myName||'Anfitrião').substring(0,12);
+  updateHostPlayerScorebar();
   const lb = document.getElementById('hostLiveLb');
   lb.innerHTML = '<div style="color:#888;text-align:center;font-size:.85rem">Aguardando respostas...</div>';
   go('s-host-quiz');
@@ -846,6 +1113,9 @@ function renderHostReveal(msg) {
   if (msg.explanation) { expl.textContent = '💡 ' + msg.explanation; expl.style.display = ''; }
   else expl.style.display = 'none';
   renderLb(document.getElementById('revealLb'), msg.leaderboard);
+  // [ALTERAÇÃO 1] Mostrar botão "Próxima" na barra de controlo do host
+  document.getElementById('hcbNextBtn').style.display = '';
+  document.getElementById('hcbStartBtn').style.display = 'none';
   go('s-host-reveal');
 }
 
@@ -884,6 +1154,7 @@ function renderPlayerQuestion(msg) {
 }
 
 function renderPlayerReveal(msg) {
+  // [ALTERAÇÃO 1] myId pode ser 'host' se for o anfitrião
   const myEntry = msg.leaderboard.find(p => p.id === myId);
   const pos = msg.leaderboard.findIndex(p => p.id === myId) + 1;
   document.getElementById('prTitle').textContent = pos === 1 ? '🥇 Você é o 1º!' : `${pos}º lugar`;
@@ -911,7 +1182,7 @@ function renderLbHtml(lb) {
   return lb.map((p,i) => `
     <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
       <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
-      <span class="lb-name">${p.name}</span>
+      <span class="lb-name">${p.name}${p.isHost?' 👑':''}</span>
       <span class="lb-pts">${p.score?.toLocaleString()}</span>
     </div>`).join('');
 }
@@ -929,6 +1200,16 @@ function updatePlayerScorebar() {
   const hearts = document.querySelectorAll('#pHearts .heart');
   hearts.forEach((h,i) => h.classList.toggle('lost', i >= myLives));
   document.getElementById('pStreak').textContent = myStreak >= 2 ? `🔥 x${Math.min(myStreak,4)}` : '';
+}
+
+// [ALTERAÇÃO 1] Scorebar do anfitrião como jogador
+function updateHostPlayerScorebar() {
+  const el = document.getElementById('hSbPts');
+  if (el) el.textContent = hostScore.toLocaleString();
+  const hearts = document.querySelectorAll('#hHearts .heart');
+  hearts.forEach((h,i) => h.classList.toggle('lost', i >= hostLives));
+  const streak = document.getElementById('hStreak');
+  if (streak) streak.textContent = hostStreak >= 2 ? `🔥 x${Math.min(hostStreak,4)}` : '';
 }
 
 function catLabel(c) {
@@ -1095,8 +1376,106 @@ function renderAdminRanking() {
 }
 
 // ═══════════════════════════════════════════════════════
-// AUDIO
+// FOOTER MODALS (ALTERAÇÃO 2)
 // ═══════════════════════════════════════════════════════
+function openFooterModal(id) {
+  // Fechar todos os modais antes de abrir
+  document.querySelectorAll('.modal-ov').forEach(m => m.classList.remove('show'));
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  if (id === 'modal-history') renderHistoryModal();
+  modal.classList.add('show');
+  playClick();
+}
+function closeModalOv(event, el) {
+  // Fechar ao clicar no overlay (fora do sheet)
+  if (event.target === el) el.classList.remove('show');
+}
+
+// Login admin via footer
+function footerAdminLogin() {
+  const pass = document.getElementById('footerAdminPass').value;
+  document.querySelectorAll('.modal-ov').forEach(m => m.classList.remove('show'));
+  connectWS(() => send({ type: 'admin_auth', password: pass }));
+}
+
+// ─── HISTÓRICO (localStorage) ───
+function saveGameToHistory(leaderboard) {
+  try {
+    const history = JSON.parse(localStorage.getItem('oi_history') || '[]');
+    const entry = {
+      date: new Date().toLocaleString('pt-PT'),
+      players: leaderboard.map(p => ({ name: p.name, score: p.score })),
+    };
+    history.unshift(entry); // mais recente primeiro
+    // Guardar máximo 20 partidas
+    localStorage.setItem('oi_history', JSON.stringify(history.slice(0, 20)));
+  } catch(e) {}
+}
+
+function renderHistoryModal() {
+  try {
+    const history = JSON.parse(localStorage.getItem('oi_history') || '[]');
+    const el = document.getElementById('historyList');
+    if (!history.length) {
+      el.innerHTML = '<p style="text-align:center;color:#888;padding:20px">Nenhuma partida guardada ainda!</p>';
+      return;
+    }
+    el.innerHTML = history.map((entry, gi) => `
+      <div style="background:#f9f9f9;border-radius:16px;padding:12px;margin-bottom:10px;border:2px solid rgba(255,215,0,.3)">
+        <div style="font-family:'Fredoka One',cursive;font-size:.85rem;color:#888;margin-bottom:8px">📅 ${entry.date}</div>
+        ${entry.players.slice(0,5).map((p,i) => `
+          <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}" style="padding:7px 10px;margin-bottom:4px">
+            <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
+            <span class="lb-name">${p.name}</span>
+            <span class="lb-pts">${p.score?.toLocaleString()}</span>
+          </div>`).join('')}
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function clearHistory() {
+  if (confirm('Apagar todo o histórico local?')) {
+    localStorage.removeItem('oi_history');
+    renderHistoryModal();
+    showToast('✅ Histórico apagado!');
+  }
+}
+
+// ─── SUGERIR PERGUNTA ───
+function submitSuggestion() {
+  const q = document.getElementById('sug-q').value.trim();
+  const a0 = document.getElementById('sug-a0').value.trim();
+  const a1 = document.getElementById('sug-a1').value.trim();
+  const a2 = document.getElementById('sug-a2').value.trim();
+  const a3 = document.getElementById('sug-a3').value.trim();
+  const ref = document.getElementById('sug-ref').value.trim();
+  if (!q || !a0 || !a1 || !a2 || !a3) { showToast('Preencha a pergunta e as 4 opções!'); return; }
+  // Guardar sugestão em localStorage (para posterior revisão pelo admin)
+  try {
+    const suggestions = JSON.parse(localStorage.getItem('oi_suggestions') || '[]');
+    suggestions.push({
+      q, a: [a0,a1,a2,a3],
+      correct: parseInt(document.getElementById('sug-correct').value),
+      cat: document.getElementById('sug-cat').value,
+      ref, date: new Date().toLocaleString('pt-PT'),
+    });
+    localStorage.setItem('oi_suggestions', JSON.stringify(suggestions));
+  } catch(e) {}
+  // Mostrar agradecimento
+  document.getElementById('suggestForm').style.display = 'none';
+  document.getElementById('suggestThanks').style.display = '';
+  playCorrect();
+}
+
+function resetSuggestForm() {
+  ['sug-q','sug-a0','sug-a1','sug-a2','sug-a3','sug-ref'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('suggestForm').style.display = '';
+  document.getElementById('suggestThanks').style.display = 'none';
+}
 let actx = null;
 function getAC() {
   if (!actx) { try { actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {} }
