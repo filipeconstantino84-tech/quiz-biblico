@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quiz Bíblico Multiplayer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink: #e91e8c; --pink2: #c2185b;
+  --green: #2ecc71; --green2: #27ae60;
+  --gold: #FFD700; --gold2: #FFA500;
+  --blue: #3498db; --blue2: #2980b9;
+  --red: #e74c3c; --purple: #9b59b6;
+  --sky: #87CEEB; --dark: #2c1a0e;
+  --cream: #FFF9E6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow-x: hidden; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(180deg, #87CEEB 0%, #c8e8f8 35%, #a8d5a2 65%, #5a9e4a 100%);
+  min-height: 100vh;
+}
+/* ── CLOUDS ── */
+.cloud { position: fixed; background: white; border-radius: 50px; opacity: 0.8; pointer-events: none; z-index: 0; }
+.cloud::before, .cloud::after { content: ''; position: absolute; background: white; border-radius: 50%; }
+.c1 { width: 120px; height: 38px; top: 6%; left: -130px; animation: cm 22s linear infinite; }
+.c1::before { width: 55px; height: 55px; top: -28px; left: 14px; }
+.c1::after { width: 38px; height: 38px; top: -18px; left: 52px; }
+.c2 { width: 80px; height: 26px; top: 16%; left: -90px; animation: cm 30s linear infinite 10s; }
+.c2::before { width: 38px; height: 38px; top: -20px; left: 10px; }
+.c2::after { width: 28px; height: 28px; top: -13px; left: 36px; }
+.c3 { width: 100px; height: 32px; top: 4%; left: -110px; animation: cm 26s linear infinite 5s; }
+.c3::before { width: 48px; height: 48px; top: -24px; left: 12px; }
+.c3::after { width: 34px; height: 34px; top: -17px; left: 46px; }
+@keyframes cm { from { left: -150px; } to { left: 110%; } }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; padding: 16px 14px 50px; position: relative; z-index: 1; flex-direction: column; align-items: center; justify-content: center; animation: fadeUp .45s ease; }
+.screen.active { display: flex; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── TITLE ── */
+.title {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(2rem, 8vw, 3rem);
+  color: #fff;
+  text-shadow: 3px 3px 0 var(--pink), 5px 5px 0 rgba(233,30,140,.35);
+  text-align: center; line-height: 1.1;
+  animation: bounce 2.2s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.subtitle { font-size: .95rem; color: #fff; opacity: .9; text-align: center; margin: 6px 0 22px; text-shadow: 1px 1px 3px rgba(0,0,0,.3); }
+
+/* ── SHEEP SVG ── */
+.sheep-wrap { animation: sw 1.6s ease-in-out infinite; }
+@keyframes sw { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+/* ── CARD ── */
+.card {
+  background: rgba(255,255,255,.93);
+  border-radius: 24px; padding: 22px 18px;
+  width: 100%; max-width: 370px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.8);
+  border: 3px solid rgba(255,215,0,.5);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: block; width: 100%; max-width: 340px;
+  padding: 15px 20px; margin: 8px auto;
+  border: none; border-radius: 50px;
+  font-family: 'Fredoka One', cursive; font-size: 1.25rem;
+  cursor: pointer; transition: all .14s; position: relative; overflow: hidden;
+  box-shadow: 0 6px 0 rgba(0,0,0,.22);
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
+.btn-green { background: linear-gradient(180deg,#4cde82,#27ae60); color: #fff; text-shadow: 0 2px 3px rgba(0,0,0,.3); border-bottom: 4px solid #1e8449; }
+.btn-pink  { background: linear-gradient(180deg,#ff6eb4,#e91e8c); color: #fff; text-shadow: 0 2px 3px rgba(0,0,0,.3); border-bottom: 4px solid #b5146e; }
+.btn-gold  { background: linear-gradient(180deg,#ffd700,#ffa500); color: #5a3000; border-bottom: 4px solid #cc8400; }
+.btn-blue  { background: linear-gradient(180deg,#5dade2,#2980b9); color: #fff; text-shadow: 0 2px 3px rgba(0,0,0,.3); border-bottom: 4px solid #1a6391; }
+.btn-red   { background: linear-gradient(180deg,#ff6b6b,#e74c3c); color: #fff; text-shadow: 0 2px 3px rgba(0,0,0,.3); border-bottom: 4px solid #922b21; }
+.btn::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent); transition:.4s; }
+.btn:hover::after { left:100%; }
+
+/* ── FORM ── */
+.lbl { display: block; font-size: .82rem; font-weight: 800; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+.inp, .sel {
+  width: 100%; padding: 13px 15px;
+  border: 2px solid #ddd; border-radius: 14px;
+  font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700;
+  color: #333; background: #f9f9f9; outline: none; transition: border-color .2s;
+  margin-bottom: 14px; appearance: none;
+}
+.inp:focus, .sel:focus { border-color: var(--pink); background: #fff; }
+
+/* ── DIFF PILLS ── */
+.diff-group { display: flex; gap: 7px; margin-bottom: 14px; }
+.dp { flex:1; padding: 9px 6px; border: 2px solid #ddd; border-radius: 50px; background: #f5f5f5; font-family:'Fredoka One',cursive; font-size: .85rem; cursor: pointer; text-align: center; transition: all .2s; color: #666; }
+.dp.ae { background: var(--green); color:#fff; border-color: var(--green2); }
+.dp.am { background: #f39c12; color:#fff; border-color: #d68910; }
+.dp.ah { background: var(--red); color:#fff; border-color: #c0392b; }
+
+/* ── QTY ── */
+.qty-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.qbtn { width:38px; height:38px; border-radius:50%; border:none; font-size:1.3rem; font-weight:900; cursor:pointer; background:linear-gradient(180deg,#ffd700,#ffa500); color:#5a3000; box-shadow:0 3px 0 #cc8400; display:flex; align-items:center; justify-content:center; transition:all .1s; }
+.qbtn:active { transform:translateY(2px); box-shadow:none; }
+.qdsp { flex:1; text-align:center; font-family:'Fredoka One',cursive; font-size:1.7rem; color:var(--pink); background:#f9f9f9; border:2px solid #eee; border-radius:10px; padding:7px; }
+
+/* ── BACK ── */
+.back { display:inline-flex; align-items:center; gap:5px; color:#fff; font-weight:800; font-size:.9rem; cursor:pointer; opacity:.85; margin-bottom:12px; align-self:flex-start; }
+.back:hover { opacity:1; }
+
+/* ── PIN DISPLAY ── */
+.pin-box {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 24px; padding: 20px;
+  width: 100%; max-width: 370px; margin-bottom: 14px;
+  border: 3px solid var(--gold);
+  text-align: center;
+}
+.pin-label { color: var(--gold); font-family:'Fredoka One',cursive; font-size:.9rem; letter-spacing:.2em; text-transform:uppercase; margin-bottom:6px; }
+.pin-number { font-family:'Fredoka One',cursive; font-size:3.8rem; color:#00ff88; letter-spacing:.15em; text-shadow:0 0 20px rgba(0,255,136,.5); line-height:1; }
+.pin-sub { color:rgba(255,255,255,.6); font-size:.82rem; margin-top:6px; }
+
+/* ── PLAYERS GRID ── */
+.players-panel { width:100%; max-width:370px; background:rgba(255,255,255,.88); border-radius:20px; padding:14px; margin-bottom:12px; border:2px solid rgba(255,215,0,.4); max-height:220px; overflow-y:auto; }
+.players-count { font-family:'Fredoka One',cursive; font-size:1rem; color:var(--pink); margin-bottom:10px; }
+.players-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; }
+.player-chip { background:linear-gradient(135deg,var(--green),var(--green2)); color:#fff; border-radius:12px; padding:8px 6px; text-align:center; font-size:.82rem; font-weight:800; animation:chipIn .3s ease; }
+@keyframes chipIn { from{transform:scale(0) rotate(-10deg);opacity:0;} to{transform:scale(1) rotate(0);opacity:1;} }
+
+/* ── QUIZ UI ── */
+#screen-quiz { justify-content:flex-start; padding-top:10px; }
+.quiz-header { width:100%; max-width:390px; display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; gap:8px; }
+.prog-out { flex:1; height:13px; background:rgba(255,255,255,.4); border-radius:50px; overflow:hidden; border:2px solid rgba(255,255,255,.5); }
+.prog-in { height:100%; background:linear-gradient(90deg,#ffd700,#ff6b35); border-radius:50px; transition:width .5s ease; }
+.qnum { font-family:'Fredoka One',cursive; font-size:1rem; color:#fff; text-shadow:1px 1px 3px rgba(0,0,0,.4); white-space:nowrap; }
+.timer { width:44px; height:44px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:1.2rem; box-shadow:0 3px 10px rgba(0,0,0,.2); transition:color .3s, background .3s; flex-shrink:0; }
+.timer.urgent { background:var(--red); color:#fff; animation:tp .5s ease infinite alternate; }
+@keyframes tp { from{transform:scale(1);} to{transform:scale(1.15);} }
+
+.qcard {
+  background:linear-gradient(135deg,#fff9e0,#fffde7);
+  border-radius:22px; padding:18px 16px 14px;
+  width:100%; max-width:390px; margin-bottom:11px;
+  border:3px solid var(--gold);
+  box-shadow:0 8px 24px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.9);
+  text-align:center; position:relative; min-height:120px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.cat-badge { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,var(--pink),var(--purple)); color:#fff; font-size:.68rem; font-weight:800; padding:3px 13px; border-radius:50px; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }
+.q-icon { font-size:2rem; margin-bottom:6px; }
+.q-text { font-size:clamp(1rem,4vw,1.2rem); font-weight:800; color:var(--dark); line-height:1.4; }
+
+.answers { width:100%; max-width:390px; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.ans-btn {
+  display:flex; align-items:center; gap:11px; padding:12px 15px;
+  border:none; border-radius:15px; cursor:pointer;
+  font-family:'Nunito',sans-serif; font-size:.95rem; font-weight:700;
+  text-align:left; transition:all .14s ease; position:relative; overflow:hidden;
+  box-shadow:0 4px 0 rgba(0,0,0,.14);
+}
+.ans-btn .letter { min-width:30px; height:30px; border-radius:8px; background:rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:1rem; flex-shrink:0; }
+.ans-btn:nth-child(1) { background:linear-gradient(135deg,#3498db,#2980b9); color:#fff; box-shadow:0 4px 0 #1a6391; }
+.ans-btn:nth-child(2) { background:linear-gradient(135deg,#e67e22,#d35400); color:#fff; box-shadow:0 4px 0 #a04000; }
+.ans-btn:nth-child(3) { background:linear-gradient(135deg,#9b59b6,#8e44ad); color:#fff; box-shadow:0 4px 0 #6c3483; }
+.ans-btn:nth-child(4) { background:linear-gradient(135deg,#1abc9c,#16a085); color:#fff; box-shadow:0 4px 0 #0e7766; }
+.ans-btn:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.14) !important; }
+.ans-btn.correct { background:linear-gradient(135deg,#2ecc71,#27ae60) !important; box-shadow:0 4px 0 #1e8449 !important; animation:cpop .4s ease; }
+.ans-btn.wrong   { background:linear-gradient(135deg,#e74c3c,#c0392b) !important; box-shadow:0 4px 0 #922b21 !important; animation:cshk .4s ease; }
+.ans-btn.dim { opacity:.55; pointer-events:none; }
+@keyframes cpop { 0%,100%{transform:scale(1);} 50%{transform:scale(1.04);} }
+@keyframes cshk { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+/* ── SCOREBAR ── */
+.scorebar { width:100%; max-width:390px; display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.88); border-radius:50px; padding:7px 15px; box-shadow:0 3px 10px rgba(0,0,0,.1); }
+.sb-name { font-weight:800; font-size:.88rem; color:var(--dark); }
+.sb-pts  { font-family:'Fredoka One',cursive; font-size:1.2rem; color:var(--pink); }
+.hearts  { display:flex; gap:3px; }
+.heart   { font-size:1.1rem; transition:all .3s; }
+.heart.lost { opacity:.2; filter:grayscale(1); }
+.streak-badge { font-family:'Fredoka One',cursive; color:#f39c12; font-size:.95rem; }
+
+/* ── PLAYER WAITING ── */
+.waiting-box { text-align:center; }
+.waiting-pin { font-family:'Fredoka One',cursive; font-size:5rem; color:#00ff88; text-shadow:0 0 30px rgba(0,255,136,.6); animation:pulseGlow 1.5s ease-in-out infinite; }
+@keyframes pulseGlow { 0%,100%{text-shadow:0 0 20px rgba(0,255,136,.4);} 50%{text-shadow:0 0 40px rgba(0,255,136,.8), 0 0 60px rgba(0,255,136,.4);} }
+.waiting-msg { color:#fff; font-weight:700; font-size:1rem; margin-top:10px; }
+.player-avatar { font-size:4rem; animation:bounce 1.5s ease-in-out infinite; }
+
+/* ── LEADERBOARD ── */
+.lb-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; margin-bottom:6px; font-weight:800; }
+.lb-1 { background:linear-gradient(90deg,#ffd700,#ffe566); color:#5a3000; }
+.lb-2 { background:linear-gradient(90deg,#c0c0c0,#e0e0e0); color:#333; }
+.lb-3 { background:linear-gradient(90deg,#cd7f32,#e0a060); color:#fff; }
+.lb-n { background:#f5f5f5; color:#444; }
+.lb-pos { font-family:'Fredoka One',cursive; font-size:1.1rem; min-width:26px; }
+.lb-name { flex:1; }
+.lb-pts { font-family:'Fredoka One',cursive; color:var(--pink); font-size:1.1rem; }
+
+/* ── EXPLANATION BOX ── */
+.expl-box { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border-radius:16px; padding:12px 15px; margin-bottom:10px; border-left:4px solid var(--green); font-size:.9rem; color:#2e7d32; font-weight:700; width:100%; max-width:390px; }
+
+/* ── FEEDBACK OVERLAY ── */
+.fb-ov { position:fixed; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; z-index:100; pointer-events:none; opacity:0; transition:opacity .3s; }
+.fb-ov.show { opacity:1; }
+.fb-box { background:#fff; border-radius:26px; padding:26px 34px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.28); transform:scale(.7); transition:transform .3s cubic-bezier(.34,1.56,.64,1); border:4px solid var(--gold); }
+.fb-ov.show .fb-box { transform:scale(1); }
+.fb-icon { font-size:3.8rem; display:block; margin-bottom:7px; }
+.fb-txt  { font-family:'Fredoka One',cursive; font-size:1.5rem; }
+.fb-pts  { font-size:.95rem; color:#666; margin-top:4px; font-weight:700; }
+
+/* ── PARTICLES ── */
+.part { position:fixed; pointer-events:none; z-index:200; font-size:1.8rem; animation:pfly 1s ease forwards; }
+@keyframes pfly { 0%{opacity:1;transform:translateY(0) scale(1);} 100%{opacity:0;transform:translateY(-120px) scale(.5);} }
+
+/* ── CONFETTI ── */
+.conf { position:fixed; pointer-events:none; z-index:300; border-radius:2px; animation:cffall linear forwards; }
+@keyframes cffall { 0%{transform:translateY(0) rotate(0);opacity:1;} 100%{transform:translateY(110vh) rotate(720deg);opacity:0;} }
+
+/* ── COUNTDOWN OVERLAY ── */
+.cd-ov { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.7); z-index:150; display:flex; align-items:center; justify-content:center; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .3s; }
+.cd-ov.show { opacity:1; }
+.cd-num { font-family:'Fredoka One',cursive; font-size:9rem; color:#fff; text-shadow:0 0 40px rgba(255,215,0,.8); animation:cdpop .8s ease; }
+@keyframes cdpop { 0%{transform:scale(2);opacity:0;} 50%{transform:scale(1.1);} 100%{transform:scale(1);opacity:1;} }
+.cd-txt { color:var(--gold); font-family:'Fredoka One',cursive; font-size:1.4rem; margin-top:10px; }
+
+/* ── ELIMINATED ── */
+.elim-ov { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(180,0,0,.85); z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; display:none; }
+.elim-ov.show { display:flex; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(100px); background:rgba(0,0,0,.85); color:#fff; padding:10px 22px; border-radius:50px; font-weight:700; font-size:.9rem; z-index:400; transition:transform .4s; white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── HOST LIVE PANEL ── */
+.host-panel { width:100%; max-width:420px; }
+.host-q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.host-q-header .qnum { font-size:1.1rem; }
+.host-lb { width:100%; max-width:420px; background:rgba(255,255,255,.9); border-radius:20px; padding:14px; max-height:280px; overflow-y:auto; border:2px solid rgba(255,215,0,.4); margin-bottom:10px; }
+.answered-count { font-family:'Fredoka One',cursive; font-size:.95rem; color:var(--green); background:rgba(255,255,255,.85); border-radius:50px; padding:5px 16px; margin-bottom:8px; display:inline-block; }
+
+@media(max-height:680px) {
+  .qcard { min-height:100px; padding:13px; }
+  .ans-btn { padding:9px 12px; }
+}
+</style>
+</head>
+<body>
+<!-- bg -->
+<div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div class="screen active" id="s-home">
+  <div class="sheep-wrap" style="width:130px;margin-bottom:4px">
+    <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="100" cy="100" rx="65" ry="52" fill="#f0f0f0"/>
+      <circle cx="68" cy="78" r="28" fill="white"/><circle cx="100" cy="68" r="30" fill="white"/>
+      <circle cx="132" cy="78" r="28" fill="white"/><circle cx="80" cy="92" r="24" fill="white"/>
+      <circle cx="118" cy="92" r="24" fill="white"/><circle cx="100" cy="96" r="26" fill="white"/>
+      <ellipse cx="100" cy="58" rx="28" ry="26" fill="#f5deb3"/>
+      <circle cx="90" cy="52" r="7" fill="white"/><circle cx="90" cy="52" r="4" fill="#333"/>
+      <circle cx="110" cy="52" r="7" fill="white"/><circle cx="110" cy="52" r="4" fill="#333"/>
+      <circle cx="91" cy="51" r="1.5" fill="white"/><circle cx="111" cy="51" r="1.5" fill="white"/>
+      <ellipse cx="100" cy="65" rx="9" ry="7" fill="#e8a87c"/>
+      <circle cx="96" cy="65" r="2.5" fill="#c07050"/><circle cx="104" cy="65" r="2.5" fill="#c07050"/>
+      <path d="M94 70 Q100 76 106 70" fill="none" stroke="#c07050" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="74" cy="48" rx="10" ry="14" fill="#f5deb3" transform="rotate(-20,74,48)"/>
+      <ellipse cx="126" cy="48" rx="10" ry="14" fill="#f5deb3" transform="rotate(20,126,48)"/>
+      <rect x="74" y="140" width="14" height="34" rx="7" fill="#f5deb3"/>
+      <rect x="94" y="142" width="14" height="32" rx="7" fill="#f5deb3"/>
+      <rect x="112" y="142" width="14" height="32" rx="7" fill="#f5deb3"/>
+      <rect x="74" y="166" width="14" height="10" rx="4" fill="#555"/>
+      <rect x="94" y="166" width="14" height="10" rx="4" fill="#555"/>
+      <rect x="112" y="166" width="14" height="10" rx="4" fill="#555"/>
+    </svg>
+  </div>
+  <div class="title">Quiz Bíblico</div>
+  <div class="subtitle">✝️ Multiplayer em Tempo Real</div>
+  <button class="btn btn-pink" onclick="go('s-host-setup')">👑 Criar Jogo (Anfitrião)</button>
+  <button class="btn btn-green" onclick="go('s-join')">🎮 Ingressar num Jogo</button>
+  <button class="btn btn-gold" onclick="go('s-ranking')">🏆 Ranking Global</button>
+  <button class="btn btn-blue" onclick="go('s-admin-login')" style="max-width:200px;font-size:1rem;padding:10px">⚙️ Admin</button>
+</div>
+
+<!-- ══════════════ HOST SETUP ══════════════ -->
+<div class="screen" id="s-host-setup">
+  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <div class="title" style="font-size:1.9rem;margin-bottom:14px">👑 Criar Jogo</div>
+  <div class="card">
+    <label class="lbl">👤 Seu Nome (Anfitrião)</label>
+    <input class="inp" id="hostName" type="text" placeholder="Nome do anfitrião" maxlength="20">
+
+    <label class="lbl">⚡ Dificuldade</label>
+    <div class="diff-group">
+      <div class="dp ae" data-d="facil" onclick="selDiff(this,'ae')">😊 Fácil</div>
+      <div class="dp" data-d="medio" onclick="selDiff(this,'am')">🔥 Médio</div>
+      <div class="dp" data-d="dificil" onclick="selDiff(this,'ah')">💀 Difícil</div>
+    </div>
+
+    <label class="lbl">❓ Nº de Perguntas</label>
+    <div class="qty-row">
+      <button class="qbtn" onclick="chQty(-5)">−</button>
+      <div class="qdsp" id="qtyD">10</div>
+      <button class="qbtn" onclick="chQty(5)">+</button>
+    </div>
+
+    <label class="lbl">🏷️ Categoria</label>
+    <select class="sel" id="catSel">
+      <option value="all">📚 Todas</option>
+      <option value="ot">📜 Antigo Testamento</option>
+      <option value="nt">✝️ Novo Testamento</option>
+      <option value="personagens">👑 Personagens</option>
+      <option value="milagres">✨ Milagres</option>
+    </select>
+
+    <button class="btn btn-pink" onclick="createGame()" style="margin:0">🕊️ Criar Sala!</button>
+  </div>
+</div>
+
+<!-- ══════════════ HOST LOBBY ══════════════ -->
+<div class="screen" id="s-host-lobby">
+  <div class="title" style="font-size:1.6rem;margin-bottom:10px">Aguardando Jogadores...</div>
+  <div class="pin-box">
+    <div class="pin-label">📌 PIN do Jogo</div>
+    <div class="pin-number" id="pinDisplay">----</div>
+    <div class="pin-sub">Compartilhe este PIN com os jogadores</div>
+  </div>
+  <div class="players-panel">
+    <div class="players-count">👥 <span id="playerCount">0</span> jogador(es) conectado(s)</div>
+    <div class="players-grid" id="playersGrid"></div>
+  </div>
+  <button class="btn btn-green" onclick="hostStartGame()">▶️ Iniciar Jogo!</button>
+  <button class="btn btn-red" onclick="go('s-home')" style="max-width:200px;font-size:1rem;padding:10px">✖ Cancelar</button>
+</div>
+
+<!-- ══════════════ JOIN ══════════════ -->
+<div class="screen" id="s-join">
+  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <div class="title" style="font-size:1.9rem;margin-bottom:14px">🎮 Ingressar</div>
+  <div class="card">
+    <label class="lbl">📌 PIN do Jogo</label>
+    <input class="inp" id="joinPin" type="number" placeholder="Digite o PIN" maxlength="4" style="font-family:'Fredoka One',cursive;font-size:2rem;text-align:center;letter-spacing:.2em">
+
+    <label class="lbl">👤 Seu Nome</label>
+    <input class="inp" id="joinName" type="text" placeholder="Seu nome" maxlength="20">
+
+    <button class="btn btn-green" onclick="joinGame()" style="margin:0">🚀 Entrar!</button>
+  </div>
+</div>
+
+<!-- ══════════════ PLAYER WAITING ══════════════ -->
+<div class="screen" id="s-player-wait">
+  <div class="waiting-box" style="text-align:center">
+    <div class="player-avatar">🐑</div>
+    <div class="title" style="font-size:1.6rem" id="waitName">Olá!</div>
+    <div style="color:#fff;font-size:.95rem;margin:8px 0">Aguardando o anfitrião iniciar...</div>
+    <div class="pin-box" style="margin-top:14px">
+      <div class="pin-label">PIN DA SALA</div>
+      <div class="pin-number" id="waitPin">----</div>
+    </div>
+    <div id="waitPlayers" style="color:#fff;font-weight:700;margin-top:10px;font-size:.9rem"></div>
+  </div>
+</div>
+
+<!-- ══════════════ HOST QUIZ ══════════════ -->
+<div class="screen" id="s-host-quiz">
+  <div class="quiz-header host-q-header">
+    <span class="qnum" id="hqNum">1/10</span>
+    <div class="prog-out"><div class="prog-in" id="hProg" style="width:10%"></div></div>
+    <div class="timer" id="hTimer">30</div>
+  </div>
+  <div class="qcard">
+    <div class="cat-badge" id="hCat">Bíblia</div>
+    <div class="q-icon" id="hIcon">📖</div>
+    <div class="q-text" id="hQ">...</div>
+  </div>
+  <div class="answered-count" id="answeredCount">0 responderam</div>
+  <div class="host-lb" id="hostLiveLb"></div>
+  <!-- Reveal next button hidden until answer revealed -->
+  <button class="btn btn-green" id="nextBtn" onclick="hostNext()" style="display:none">➡️ Próxima Pergunta</button>
+</div>
+
+<!-- ══════════════ PLAYER QUIZ ══════════════ -->
+<div class="screen" id="s-quiz">
+  <div class="quiz-header">
+    <span class="qnum" id="pqNum">1/10</span>
+    <div class="prog-out"><div class="prog-in" id="pProg" style="width:10%"></div></div>
+    <div class="timer" id="pTimer">30</div>
+  </div>
+  <div class="qcard">
+    <div class="cat-badge" id="pCat">Bíblia</div>
+    <div class="q-icon" id="pIcon">📖</div>
+    <div class="q-text" id="pQ">...</div>
+  </div>
+  <div class="answers" id="pAnswers">
+    <button class="ans-btn" onclick="sendAnswer(0)"><span class="letter">A</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(1)"><span class="letter">B</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(2)"><span class="letter">C</span><span class="at"></span></button>
+    <button class="ans-btn" onclick="sendAnswer(3)"><span class="letter">D</span><span class="at"></span></button>
+  </div>
+  <div class="scorebar">
+    <div>
+      <div class="sb-name" id="pSbName">Jogador</div>
+      <div class="sb-pts"><span id="pSbPts">0</span> pts</div>
+    </div>
+    <div class="hearts" id="pHearts">
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+    </div>
+    <div class="streak-badge" id="pStreak"></div>
+  </div>
+</div>
+
+<!-- ══════════════ HOST REVEAL ══════════════ -->
+<div class="screen" id="s-host-reveal">
+  <div class="title" style="font-size:1.5rem;margin-bottom:10px" id="revealTitle">Resposta Correta!</div>
+  <div class="expl-box" id="revealExpl" style="display:none"></div>
+  <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar Atual</div>
+  <div style="width:100%;max-width:390px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px" id="revealLb"></div>
+  <button class="btn btn-green" onclick="hostNext()">➡️ Próxima Pergunta</button>
+</div>
+
+<!-- ══════════════ PLAYER REVEAL ══════════════ -->
+<div class="screen" id="s-player-reveal">
+  <div style="font-size:4rem;margin-bottom:8px" id="prIcon">✅</div>
+  <div class="title" style="font-size:1.8rem;margin-bottom:6px" id="prTitle">Correto!</div>
+  <div style="color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:10px" id="prPts">+150 pts</div>
+  <div class="expl-box" id="prExpl" style="display:none;max-width:370px"></div>
+  <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar</div>
+  <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:220px;overflow-y:auto;margin-bottom:10px" id="playerRevealLb"></div>
+  <div style="color:rgba(255,255,255,.7);font-size:.85rem">Aguardando próxima pergunta...</div>
+</div>
+
+<!-- ══════════════ GAME OVER (HOST) ══════════════ -->
+<div class="screen" id="s-host-over">
+  <div class="title" style="font-size:2rem;margin-bottom:10px">🏆 Fim do Jogo!</div>
+  <div style="width:100%;max-width:390px;background:rgba(255,255,255,.93);border-radius:24px;padding:20px;border:3px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.18);margin-bottom:14px" id="finalLb"></div>
+  <button class="btn btn-pink" onclick="go('s-host-setup')">🔄 Novo Jogo</button>
+  <button class="btn btn-gold" onclick="go('s-home')">🏠 Menu</button>
+</div>
+
+<!-- ══════════════ GAME OVER (PLAYER) ══════════════ -->
+<div class="screen" id="s-player-over">
+  <div style="font-size:5rem;margin-bottom:8px" id="poIcon">🎉</div>
+  <div class="title" id="poTitle" style="font-size:1.8rem;margin-bottom:6px">Parabéns!</div>
+  <div style="background:rgba(255,255,255,.93);border-radius:24px;padding:20px;width:100%;max-width:370px;border:3px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.18);margin-bottom:14px">
+    <div style="font-family:'Fredoka One',cursive;font-size:3.5rem;color:var(--pink);text-align:center" id="poScore">0</div>
+    <div style="text-align:center;color:#888;font-size:.8rem;text-transform:uppercase;font-weight:800">Sua pontuação final</div>
+    <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:10px;max-height:200px;overflow-y:auto;margin-top:12px" id="poLb"></div>
+  </div>
+  <button class="btn btn-green" onclick="go('s-join')">🔄 Jogar Novamente</button>
+  <button class="btn btn-gold" onclick="go('s-home')">🏠 Menu</button>
+</div>
+
+<!-- ══════════════ RANKING ══════════════ -->
+<div class="screen" id="s-ranking">
+  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <div class="title" style="font-size:2rem;margin-bottom:14px">🏆 Ranking</div>
+  <div id="rankList" style="width:100%;max-width:370px;background:rgba(255,255,255,.93);border-radius:24px;padding:18px;border:3px solid var(--gold);max-height:60vh;overflow-y:auto"></div>
+</div>
+
+<!-- ══════════════ ADMIN LOGIN ══════════════ -->
+<div class="screen" id="s-admin-login">
+  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <div class="title" style="font-size:1.8rem;margin-bottom:14px">⚙️ Admin</div>
+  <div class="card">
+    <label class="lbl">🔐 Senha Admin</label>
+    <input class="inp" id="adminPass" type="password" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn btn-blue" onclick="adminLogin()" style="margin:0">Entrar</button>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN PANEL ══════════════ -->
+<div class="screen" id="s-admin">
+  <span class="back" onclick="go('s-home')">← Sair</span>
+  <div class="title" style="font-size:1.6rem;margin-bottom:10px">⚙️ Painel Admin</div>
+
+  <!-- Stats -->
+  <div style="width:100%;max-width:420px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="adminStats"></div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;width:100%;max-width:420px">
+    <button class="btn btn-blue" onclick="adminTab('questions')" style="flex:1;padding:10px;font-size:.9rem;margin:0" id="tabQ">📝 Perguntas</button>
+    <button class="btn btn-gold" onclick="adminTab('settings')" style="flex:1;padding:10px;font-size:.9rem;margin:0" id="tabS">⚙️ Config</button>
+    <button class="btn btn-red" onclick="adminTab('ranking')" style="flex:1;padding:10px;font-size:.9rem;margin:0" id="tabR">🏆 Ranking</button>
+  </div>
+
+  <!-- Questions Tab -->
+  <div id="tab-questions" style="width:100%;max-width:420px">
+    <div style="background:rgba(255,255,255,.93);border-radius:20px;padding:16px;margin-bottom:10px;border:2px solid rgba(255,215,0,.4)">
+      <div style="font-family:'Fredoka One',cursive;color:var(--pink);font-size:1rem;margin-bottom:10px">➕ Nova Pergunta</div>
+      <input class="inp" id="nq-q" placeholder="Texto da pergunta" style="margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <input class="inp" id="nq-a0" placeholder="Opção A" style="margin:0">
+        <input class="inp" id="nq-a1" placeholder="Opção B" style="margin:0">
+        <input class="inp" id="nq-a2" placeholder="Opção C" style="margin:0">
+        <input class="inp" id="nq-a3" placeholder="Opção D" style="margin:0">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+        <select class="sel" id="nq-correct" style="margin:0">
+          <option value="0">✅ A correta</option>
+          <option value="1">✅ B correta</option>
+          <option value="2">✅ C correta</option>
+          <option value="3">✅ D correta</option>
+        </select>
+        <select class="sel" id="nq-cat" style="margin:0">
+          <option value="ot">AT</option>
+          <option value="nt">NT</option>
+          <option value="personagens">Personagens</option>
+          <option value="milagres">Milagres</option>
+        </select>
+        <select class="sel" id="nq-diff" style="margin:0">
+          <option value="facil">Fácil</option>
+          <option value="medio">Médio</option>
+          <option value="dificil">Difícil</option>
+        </select>
+      </div>
+      <input class="inp" id="nq-expl" placeholder="Explicação (opcional)" style="margin-bottom:8px">
+      <button class="btn btn-green" onclick="adminAddQ()" style="margin:0;padding:10px;font-size:1rem">➕ Adicionar</button>
+    </div>
+    <div id="qList" style="max-height:400px;overflow-y:auto"></div>
+    <button class="btn btn-pink" onclick="adminSaveQ()" style="margin-top:10px">💾 Salvar Todas as Perguntas</button>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" style="display:none;width:100%;max-width:420px">
+    <div class="card">
+      <label class="lbl">🔐 Nova Senha Admin</label>
+      <input class="inp" id="set-pass" type="password" placeholder="Nova senha (mín. 6 chars)">
+      <label class="lbl">🎮 Nome do Jogo</label>
+      <input class="inp" id="set-name" placeholder="Nome exibido no jogo">
+      <label class="lbl">👥 Máx. Jogadores por Sala</label>
+      <input class="inp" id="set-max" type="number" placeholder="30" min="2" max="100">
+      <button class="btn btn-blue" onclick="adminSaveSettings()" style="margin:0">💾 Salvar Config</button>
+    </div>
+  </div>
+
+  <!-- Ranking Tab -->
+  <div id="tab-ranking" style="display:none;width:100%;max-width:420px">
+    <div id="adminRankList" style="background:rgba(255,255,255,.93);border-radius:20px;padding:14px;max-height:400px;overflow-y:auto;margin-bottom:10px"></div>
+    <button class="btn btn-red" onclick="adminClearRanking()" style="max-width:200px">🗑️ Limpar Ranking</button>
+  </div>
+</div>
+
+<!-- Overlays -->
+<div class="fb-ov" id="fbOv">
+  <div class="fb-box">
+    <span class="fb-icon" id="fbIcon">✅</span>
+    <div class="fb-txt" id="fbTxt">Correto!</div>
+    <div class="fb-pts" id="fbPts">+100 pts</div>
+  </div>
+</div>
+<div class="cd-ov" id="cdOv">
+  <div class="cd-num" id="cdNum">3</div>
+  <div class="cd-txt" id="cdTxt">Prepare-se!</div>
+</div>
+<div class="elim-ov" id="elimOv">
+  <div style="font-size:5rem">💔</div>
+  <div style="font-family:'Fredoka One',cursive;font-size:2.5rem;color:#fff;margin:10px 0">Eliminado!</div>
+  <div style="color:rgba(255,255,255,.8);font-size:1rem">Suas vidas acabaram...</div>
+  <button class="btn btn-gold" onclick="go('s-home')" style="margin-top:20px;max-width:200px">🏠 Menu</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// WS CONNECTION
+// ═══════════════════════════════════════════════════════
+const WS_URL = location.protocol === 'https:' ? `wss://${location.host}` : `ws://${location.host}`;
+let ws = null;
+let wsReady = false;
+
+function connectWS(cb) {
+  if (ws && ws.readyState === WebSocket.OPEN) { if(cb) cb(); return; }
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => { wsReady = true; if (cb) cb(); };
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+  ws.onclose = () => { wsReady = false; showToast('⚠️ Conexão perdida. Reconectando...'); setTimeout(() => connectWS(), 3000); };
+  ws.onerror = () => {};
+}
+function send(data) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
+}
+connectWS();
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let role = null; // 'host' | 'player'
+let myPin = null;
+let myId = null;
+let myName = '';
+let myScore = 0;
+let myLives = 3;
+let myStreak = 0;
+let diffSel = 'facil';
+let qtySel = 10;
+let answered = false;
+let adminData = null;
+
+// ═══════════════════════════════════════════════════════
+// SCREEN NAV
+// ═══════════════════════════════════════════════════════
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 's-ranking') fetchRanking();
+  playClick();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETUP HELPERS
+// ═══════════════════════════════════════════════════════
+function selDiff(el, cls) {
+  document.querySelectorAll('.dp').forEach(d => d.className = 'dp');
+  el.classList.add(cls);
+  diffSel = el.dataset.d;
+  playClick();
+}
+function chQty(d) {
+  qtySel = Math.max(5, Math.min(30, qtySel + d));
+  document.getElementById('qtyD').textContent = qtySel;
+  playClick();
+}
+
+// ═══════════════════════════════════════════════════════
+// HOST FLOW
+// ═══════════════════════════════════════════════════════
+function createGame() {
+  const name = document.getElementById('hostName').value.trim();
+  if (!name) { showToast('Digite seu nome!'); return; }
+  myName = name;
+  role = 'host';
+  connectWS(() => {
+    send({ type: 'create_game', name, options: {
+      difficulty: diffSel, qty: qtySel,
+      category: document.getElementById('catSel').value
+    }});
+  });
+}
+
+function hostStartGame() {
+  send({ type: 'start_game' });
+}
+
+function hostNext() {
+  send({ type: 'next_question' });
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// PLAYER FLOW
+// ═══════════════════════════════════════════════════════
+function joinGame() {
+  const pin = document.getElementById('joinPin').value.trim();
+  const name = document.getElementById('joinName').value.trim();
+  if (!pin || pin.length !== 4) { showToast('PIN inválido!'); return; }
+  if (!name) { showToast('Digite seu nome!'); return; }
+  myName = name;
+  role = 'player';
+  connectWS(() => {
+    send({ type: 'join_game', pin, name });
+  });
+}
+
+function sendAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  document.querySelectorAll('.ans-btn').forEach(b => { b.classList.add('dim'); b.disabled = true; });
+  send({ type: 'answer', answer: idx });
+  playClick();
+}
+
+// ═══════════════════════════════════════════════════════
+// MESSAGE HANDLER
+// ═══════════════════════════════════════════════════════
+function handleMsg(msg) {
+  switch (msg.type) {
+
+    // HOST
+    case 'game_created':
+      myPin = msg.pin;
+      document.getElementById('pinDisplay').textContent = msg.pin;
+      document.getElementById('playerCount').textContent = '0';
+      document.getElementById('playersGrid').innerHTML = '';
+      go('s-host-lobby');
+      break;
+
+    case 'player_joined':
+      if (role === 'host') {
+        document.getElementById('playerCount').textContent = msg.count;
+        renderPlayersGrid(msg.players);
+        showToast(`🎉 ${msg.name} entrou!`);
+        playJoin();
+      } else {
+        document.getElementById('waitPlayers').textContent = `👥 ${msg.count} jogador(es) na sala`;
+      }
+      break;
+
+    case 'player_left':
+      if (role === 'host') {
+        document.getElementById('playerCount').textContent = msg.count;
+        renderPlayersGrid(msg.players || []);
+      }
+      break;
+
+    case 'player_answered':
+      if (role === 'host') {
+        const total = msg.players.length;
+        const answered_ = msg.players.filter(p => p.answered).length;
+        document.getElementById('answeredCount').textContent = `${answered_}/${total} responderam`;
+        renderHostLiveLb(msg.players);
+      }
+      break;
+
+    // PLAYER
+    case 'joined':
+      myId = msg.id;
+      myPin = msg.pin;
+      document.getElementById('waitName').textContent = `Olá, ${myName}! 🐑`;
+      document.getElementById('waitPin').textContent = msg.pin;
+      go('s-player-wait');
+      break;
+
+    case 'error':
+      showToast('❌ ' + msg.msg);
+      break;
+
+    // BOTH: countdown
+    case 'game_starting':
+      showCountdown('3', 'Prepare-se!');
+      break;
+
+    case 'countdown':
+      updateCountdown(msg.value);
+      break;
+
+    // BOTH: question
+    case 'question':
+      hideCountdown();
+      answered = false;
+      if (role === 'host') renderHostQuestion(msg);
+      else renderPlayerQuestion(msg);
+      break;
+
+    case 'tick':
+      updateTimer(msg.timeLeft);
+      break;
+
+    // PLAYER: answer result
+    case 'answer_result':
+      myScore = msg.score;
+      myLives = msg.lives;
+      myStreak = msg.streak;
+      updatePlayerScorebar();
+      if (msg.correct) {
+        playCorrect();
+        showFeedback(true, msg.pts, msg.streak);
+      } else {
+        playWrong();
+        showFeedback(false, 0, 0);
+        if (msg.lives <= 0) {
+          setTimeout(() => { hideFeedback(); document.getElementById('elimOv').classList.add('show'); }, 1200);
+        }
+      }
+      break;
+
+    // BOTH: reveal
+    case 'reveal':
+      hideFeedback();
+      if (role === 'host') renderHostReveal(msg);
+      else renderPlayerReveal(msg);
+      break;
+
+    case 'eliminated':
+      setTimeout(() => { document.getElementById('elimOv').classList.add('show'); }, 1500);
+      break;
+
+    case 'host_left':
+      showToast('O anfitrião saiu do jogo.');
+      setTimeout(() => go('s-home'), 2000);
+      break;
+
+    case 'kicked':
+      showToast('Você foi removido da sala.');
+      setTimeout(() => go('s-home'), 2000);
+      break;
+
+    // BOTH: game over
+    case 'game_over':
+      hideCountdown();
+      playComplete();
+      launchConfetti();
+      if (role === 'host') renderHostGameOver(msg.leaderboard);
+      else renderPlayerGameOver(msg.leaderboard);
+      break;
+
+    // ADMIN
+    case 'admin_ok':
+      adminData = msg.data;
+      go('s-admin');
+      loadAdminPanel();
+      break;
+
+    case 'admin_error':
+      showToast('❌ ' + msg.msg);
+      break;
+
+    case 'admin_saved':
+      showToast('✅ ' + msg.msg);
+      break;
+
+    case 'admin_stats':
+      renderAdminStats(msg);
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════
+function renderPlayersGrid(players) {
+  const g = document.getElementById('playersGrid');
+  g.innerHTML = players.map(p => `<div class="player-chip">🐑 ${p.name}</div>`).join('');
+}
+
+function renderHostQuestion(msg) {
+  document.getElementById('hqNum').textContent = `${msg.index+1}/${msg.total}`;
+  document.getElementById('hProg').style.width = `${((msg.index+1)/msg.total)*100}%`;
+  document.getElementById('hCat').textContent = catLabel(msg.cat);
+  document.getElementById('hIcon').textContent = msg.icon;
+  document.getElementById('hQ').textContent = msg.q;
+  document.getElementById('answeredCount').textContent = `0/${msg.players?.length||0} responderam`;
+  document.getElementById('nextBtn').style.display = 'none';
+  const lb = document.getElementById('hostLiveLb');
+  lb.innerHTML = '<div style="color:#888;text-align:center;font-size:.85rem">Aguardando respostas...</div>';
+  go('s-host-quiz');
+}
+
+function renderHostReveal(msg) {
+  const title = document.getElementById('revealTitle');
+  title.textContent = `✅ Resposta: Opção ${['A','B','C','D'][msg.correct]}`;
+  const expl = document.getElementById('revealExpl');
+  if (msg.explanation) { expl.textContent = '💡 ' + msg.explanation; expl.style.display = ''; }
+  else expl.style.display = 'none';
+  renderLb(document.getElementById('revealLb'), msg.leaderboard);
+  go('s-host-reveal');
+}
+
+function renderHostLiveLb(players) {
+  const sorted = [...players].sort((a,b) => b.score - a.score);
+  const lb = document.getElementById('hostLiveLb');
+  lb.innerHTML = sorted.slice(0,8).map((p,i) => `
+    <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
+      <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-pts">${p.score.toLocaleString()}</span>
+    </div>`).join('');
+}
+
+function renderHostGameOver(lb) {
+  const el = document.getElementById('finalLb');
+  el.innerHTML = '<div style="font-family:\'Fredoka One\',cursive;font-size:1.1rem;color:var(--pink);margin-bottom:10px;text-align:center">🏆 Resultado Final</div>' + renderLbHtml(lb);
+  go('s-host-over');
+}
+
+function renderPlayerQuestion(msg) {
+  document.getElementById('pqNum').textContent = `${msg.index+1}/${msg.total}`;
+  document.getElementById('pProg').style.width = `${((msg.index+1)/msg.total)*100}%`;
+  document.getElementById('pCat').textContent = catLabel(msg.cat);
+  document.getElementById('pIcon').textContent = msg.icon;
+  document.getElementById('pQ').textContent = msg.q;
+  document.getElementById('pSbName').textContent = myName.substring(0,12);
+  const btns = document.querySelectorAll('.ans-btn');
+  btns.forEach((b,i) => {
+    b.querySelector('.at').textContent = msg.answers[i];
+    b.className = 'ans-btn';
+    b.disabled = false;
+  });
+  updatePlayerScorebar();
+  go('s-quiz');
+}
+
+function renderPlayerReveal(msg) {
+  const myEntry = msg.leaderboard.find(p => p.id === myId);
+  const pos = msg.leaderboard.findIndex(p => p.id === myId) + 1;
+  document.getElementById('prTitle').textContent = pos === 1 ? '🥇 Você é o 1º!' : `${pos}º lugar`;
+  document.getElementById('prPts').textContent = `${myEntry?.score?.toLocaleString() || 0} pts`;
+  const expl = document.getElementById('prExpl');
+  if (msg.explanation) { expl.textContent = '💡 ' + msg.explanation; expl.style.display = ''; }
+  else expl.style.display = 'none';
+  renderLb(document.getElementById('playerRevealLb'), msg.leaderboard);
+  go('s-player-reveal');
+}
+
+function renderPlayerGameOver(lb) {
+  const myEntry = lb.find(p => p.id === myId);
+  const pos = lb.findIndex(p => p.id === myId) + 1;
+  const titles = ['🥇 Você venceu!','🥈 Vice-campeão!','🥉 3º Lugar!','👏 Boa jogada!'];
+  document.getElementById('poIcon').textContent = pos===1?'🏆':pos===2?'🥈':pos===3?'🥉':'🎮';
+  document.getElementById('poTitle').textContent = titles[Math.min(pos-1,3)] || 'Fim de Jogo!';
+  document.getElementById('poScore').textContent = (myEntry?.score||0).toLocaleString();
+  renderLb(document.getElementById('poLb'), lb);
+  go('s-player-over');
+}
+
+function renderLb(el, lb) { el.innerHTML = renderLbHtml(lb); }
+function renderLbHtml(lb) {
+  return lb.map((p,i) => `
+    <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
+      <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-pts">${p.score?.toLocaleString()}</span>
+    </div>`).join('');
+}
+
+function updateTimer(t) {
+  ['hTimer','pTimer'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = t; el.classList.toggle('urgent', t <= 5); }
+  });
+  if (t <= 5) playTick();
+}
+
+function updatePlayerScorebar() {
+  document.getElementById('pSbPts').textContent = myScore.toLocaleString();
+  const hearts = document.querySelectorAll('#pHearts .heart');
+  hearts.forEach((h,i) => h.classList.toggle('lost', i >= myLives));
+  document.getElementById('pStreak').textContent = myStreak >= 2 ? `🔥 x${Math.min(myStreak,4)}` : '';
+}
+
+function catLabel(c) {
+  return {ot:'Antigo Testamento',nt:'Novo Testamento',personagens:'Personagens',milagres:'Milagres'}[c]||'Bíblia';
+}
+
+// ═══════════════════════════════════════════════════════
+// COUNTDOWN OVERLAY
+// ═══════════════════════════════════════════════════════
+function showCountdown(n, txt) {
+  const ov = document.getElementById('cdOv');
+  document.getElementById('cdNum').textContent = n;
+  document.getElementById('cdTxt').textContent = txt;
+  ov.classList.add('show');
+}
+function updateCountdown(n) {
+  const el = document.getElementById('cdNum');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'cdpop .8s ease';
+  el.textContent = n;
+  document.getElementById('cdTxt').textContent = n > 0 ? 'Prepare-se!' : '🕊️ Vamos!';
+}
+function hideCountdown() { document.getElementById('cdOv').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════════════
+function showFeedback(correct, pts, streak) {
+  const ov = document.getElementById('fbOv');
+  document.getElementById('fbIcon').textContent = correct ? (streak>=3?'🔥':'✅') : '❌';
+  document.getElementById('fbTxt').textContent = correct ? (streak>=3?`🔥 Sequência x${Math.min(streak,4)}!`:'Correto!') : 'Errado!';
+  document.getElementById('fbPts').textContent = correct ? `+${pts.toLocaleString()} pts` : '';
+  ov.classList.add('show');
+  setTimeout(hideFeedback, 1400);
+}
+function hideFeedback() { document.getElementById('fbOv').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════
+// RANKING
+// ═══════════════════════════════════════════════════════
+async function fetchRanking() {
+  try {
+    const r = await fetch('/api/ranking').then(r => r.json());
+    const el = document.getElementById('rankList');
+    if (!r.length) { el.innerHTML = '<p style="text-align:center;color:#888;padding:20px">Nenhuma partida ainda!</p>'; return; }
+    el.innerHTML = r.map((e,i) => `
+      <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
+        <span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</span>
+        <span class="lb-name"><strong>${e.name}</strong><br><small style="opacity:.7">${e.date}</small></span>
+        <span class="lb-pts">${e.score?.toLocaleString()}</span>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════
+function adminLogin() {
+  const pass = document.getElementById('adminPass').value;
+  connectWS(() => send({ type: 'admin_auth', password: pass }));
+}
+
+function adminTab(tab) {
+  ['questions','settings','ranking'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab?'':'none';
+  });
+  send({ type: 'admin_get_stats' });
+}
+
+function loadAdminPanel() {
+  adminTab('questions');
+  send({ type: 'admin_get_stats' });
+  renderAdminQList();
+  if (adminData?.settings) {
+    document.getElementById('set-name').value = adminData.settings.gameName||'';
+    document.getElementById('set-max').value = adminData.settings.maxPlayers||30;
+  }
+  renderAdminRanking();
+}
+
+function renderAdminStats(s) {
+  document.getElementById('adminStats').innerHTML = [
+    ['🎮','Jogos Ativos',s.activeGames],
+    ['👥','Jogadores Online',s.activePlayers],
+    ['📝','Perguntas',s.totalQuestions],
+    ['🏆','No Ranking',s.totalRanking],
+  ].map(([icon,lbl,val]) => `
+    <div style="background:rgba(255,255,255,.9);border-radius:16px;padding:12px;text-align:center;border:2px solid rgba(255,215,0,.4)">
+      <div style="font-size:1.8rem">${icon}</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--pink)">${val}</div>
+      <div style="font-size:.7rem;color:#888;text-transform:uppercase;font-weight:800">${lbl}</div>
+    </div>`).join('');
+}
+
+function renderAdminQList() {
+  const qs = adminData?.questions || [];
+  document.getElementById('qList').innerHTML = qs.map((q,i) => `
+    <div style="background:rgba(255,255,255,.9);border-radius:14px;padding:10px 12px;margin-bottom:6px;border-left:4px solid var(--pink)">
+      <div style="font-weight:800;font-size:.9rem;margin-bottom:4px">${q.q}</div>
+      <div style="font-size:.78rem;color:#666">${q.a?.join(' | ')} — ✅ ${['A','B','C','D'][q.correct]} — <span style="color:var(--pink)">${q.cat}</span> — ${q.diff}</div>
+      <button onclick="adminDelQ(${i})" style="background:var(--red);color:white;border:none;border-radius:8px;padding:3px 10px;font-size:.75rem;cursor:pointer;margin-top:4px">🗑️ Remover</button>
+    </div>`).join('');
+}
+
+function adminAddQ() {
+  const q = document.getElementById('nq-q').value.trim();
+  const a0 = document.getElementById('nq-a0').value.trim();
+  const a1 = document.getElementById('nq-a1').value.trim();
+  const a2 = document.getElementById('nq-a2').value.trim();
+  const a3 = document.getElementById('nq-a3').value.trim();
+  if (!q || !a0 || !a1 || !a2 || !a3) { showToast('Preencha todos os campos!'); return; }
+  const newQ = {
+    id: Date.now(),
+    q, a: [a0,a1,a2,a3],
+    correct: parseInt(document.getElementById('nq-correct').value),
+    cat: document.getElementById('nq-cat').value,
+    diff: document.getElementById('nq-diff').value,
+    icon: '📖',
+    explanation: document.getElementById('nq-expl').value.trim(),
+  };
+  if (!adminData.questions) adminData.questions = [];
+  adminData.questions.push(newQ);
+  renderAdminQList();
+  ['nq-q','nq-a0','nq-a1','nq-a2','nq-a3','nq-expl'].forEach(id => document.getElementById(id).value = '');
+  showToast('✅ Pergunta adicionada! Clique em Salvar.');
+}
+
+function adminDelQ(i) {
+  adminData.questions.splice(i,1);
+  renderAdminQList();
+  showToast('Pergunta removida. Clique em Salvar.');
+}
+
+function adminSaveQ() {
+  send({ type: 'admin_save_questions', questions: adminData.questions });
+}
+
+function adminSaveSettings() {
+  const settings = {
+    adminPassword: document.getElementById('set-pass').value || adminData?.settings?.adminPassword,
+    gameName: document.getElementById('set-name').value,
+    maxPlayers: parseInt(document.getElementById('set-max').value) || 30,
+  };
+  send({ type: 'admin_save_settings', settings });
+}
+
+function adminClearRanking() {
+  if (confirm('Tem certeza? Isso apagará todo o ranking!')) {
+    send({ type: 'admin_clear_ranking' });
+    document.getElementById('adminRankList').innerHTML = '';
+  }
+}
+
+function renderAdminRanking() {
+  const r = adminData?.ranking || [];
+  document.getElementById('adminRankList').innerHTML = r.length
+    ? r.slice(0,30).map((e,i) => `
+        <div class="lb-item ${i===0?'lb-1':i===1?'lb-2':i===2?'lb-3':'lb-n'}">
+          <span class="lb-pos">${i+1}º</span>
+          <span class="lb-name">${e.name}<br><small>${e.date}</small></span>
+          <span class="lb-pts">${e.score?.toLocaleString()}</span>
+        </div>`).join('')
+    : '<p style="color:#888;text-align:center">Sem dados</p>';
+}
+
+// ═══════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════
+let actx = null;
+function getAC() {
+  if (!actx) { try { actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {} }
+  return actx;
+}
+function tone(f,t='sine',d=0.1,v=0.25,delay=0) {
+  const c = getAC(); if(!c) return;
+  const now = c.currentTime + delay;
+  const o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type=t; o.frequency.setValueAtTime(f,now);
+  g.gain.setValueAtTime(v,now); g.gain.exponentialRampToValueAtTime(.001,now+d);
+  o.start(now); o.stop(now+d);
+}
+function playCorrect() { tone(523,'sine',.1); tone(659,'sine',.1,.25,.1); tone(784,'sine',.2,.25,.2); }
+function playWrong() { tone(300,'sawtooth',.15); tone(200,'sawtooth',.2,.25,.15); }
+function playTick() { tone(800,'square',.05,.1); }
+function playComplete() { [523,587,659,698,784,880,988,1047].forEach((f,i)=>tone(f,'sine',.15,.22,i*.1)); }
+function playClick() { tone(440,'sine',.07,.12); }
+function playJoin() { tone(600,'sine',.08,.2); tone(800,'sine',.08,.2,.1); }
+
+// ═══════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════
+function launchConfetti() {
+  const cols = ['#ffd700','#e91e8c','#2ecc71','#3498db','#9b59b6','#f39c12'];
+  for(let i=0;i<60;i++) {
+    const p=document.createElement('div');
+    p.className='conf';
+    p.style.cssText=`left:${Math.random()*100}vw;top:-20px;width:${8+Math.random()*8}px;height:${10+Math.random()*10}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*1.5}s;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),4000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
