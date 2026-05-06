@@ -468,7 +468,7 @@ function getDefaultSettings() {
 function getDefaultQuestions() {
   return [
     { id:1, q:"Quantos livros tem a Bíblia?", a:["66","68","86","76"], correct:0, cat:"ot", icon:"📜", diff:"facil", explanation:"A Bíblia tem 66 livros: 39 no AT e 27 no NT." },
-    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", icon:"🚢", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
+    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
     { id:3, q:"Quem foi o primeiro homem criado por Deus?", a:["Abel","Caim","Noé","Adão"], correct:3, cat:"personagens", icon:"🧑", diff:"facil", explanation:"Adão foi o primeiro homem, criado do pó da terra (Gênesis 2:7)." },
     { id:4, q:"Em qual monte Moisés recebeu os Dez Mandamentos?", a:["Monte Sião","Monte Sinai","Monte Carmelo","Monte Oliveiras"], correct:1, cat:"ot", icon:"⛰️", diff:"facil", explanation:"Deus falou com Moisés no Monte Sinai (Êxodo 19-20)." },
     { id:5, q:"Com que Davi matou o gigante Golias?", a:["Espada","Lança","Funda e pedra","Arco e flecha"], correct:2, cat:"personagens", icon:"🪨", diff:"facil", explanation:"Davi usou uma funda e uma pedra para derrubar Golias (1 Samuel 17:50)." },
@@ -481,7 +481,7 @@ function getDefaultQuestions() {
     { id:12, q:"Quantos pães Jesus usou para alimentar 5000 pessoas?", a:["2","3","5","7"], correct:2, cat:"milagres", icon:"🍞", diff:"facil", explanation:"Jesus usou 5 pães e 2 peixes para alimentar mais de 5000 pessoas (João 6:9-11)." },
     { id:13, q:"Quem foi o rei mais sábio de Israel?", a:["Davi","Saul","Salomão","Roboão"], correct:2, cat:"personagens", icon:"👑", diff:"facil", explanation:"Salomão pediu sabedoria a Deus e foi o rei mais sábio de Israel (1 Reis 3:12)." },
     { id:14, q:"Qual discípulo andou sobre as águas com Jesus?", a:["João","Tiago","Paulo","Pedro"], correct:3, cat:"milagres", icon:"🌊", diff:"medio", explanation:"Pedro caminhou sobre as águas até começar a duvidar (Mateus 14:29-30)." },
-    { id:15, q:"Qual apóstolo era médico?", a:["Lucas","João","Marcos","Tiago"], correct:0, cat:"nt", icon:"⚕️", diff:"medio", explanation:"Lucas era médico e escreveu o Evangelho de Lucas e os Atos dos Apóstolos." },
+    { id:15, q:"Qual apóstolo era médico?", a:["Lucas","João","Marcos","Tiago"], correct:0, cat:"nt", diff:"medio", explanation:"Lucas era médico e escreveu o Evangelho de Lucas e os Atos dos Apóstolos." },
     { id:16, q:"Qual foi o nome do anjo que anunciou o nascimento de Jesus a Maria?", a:["Miguel","Rafael","Gabriel","Uriel"], correct:2, cat:"nt", icon:"👼", diff:"facil", explanation:"O anjo Gabriel foi enviado por Deus a Maria (Lucas 1:26-27)." },
     { id:17, q:"Qual é a profissão de Mateus antes de seguir Jesus?", a:["Pescador","Cobrador de impostos","Carpinteiro","Médico"], correct:1, cat:"nt", icon:"💰", diff:"medio", explanation:"Mateus (Levi) era publicano, cobrador de impostos (Mateus 9:9)." },
     { id:18, q:"Quantas tribos tinha Israel?", a:["10","12","14","16"], correct:1, cat:"ot", icon:"🇮🇱", diff:"medio", explanation:"Israel tinha 12 tribos, descendentes dos 12 filhos de Jacó." },
