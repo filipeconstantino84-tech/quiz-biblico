@@ -242,7 +242,9 @@ body {
 .host-lb { width:100%; max-width:420px; background:rgba(255,255,255,.9); border-radius:20px; padding:14px; max-height:280px; overflow-y:auto; border:2px solid rgba(255,215,0,.4); margin-bottom:10px; }
 .answered-count { font-family:'Fredoka One',cursive; font-size:.95rem; color:var(--green); background:rgba(255,255,255,.85); border-radius:50px; padding:5px 16px; margin-bottom:8px; display:inline-block; }
 
-/* ── HOST CONTROL BAR (ALTERAÇÃO 1) ── */
+/* ── HOST CONTROL BAR ── */
+/* A barra começa escondida via classe .hidden no HTML.
+   Só é mostrada ao anfitrião durante o jogo (gerida pela função go()). */
 .host-ctrl-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   background: linear-gradient(90deg, rgba(26,26,46,.95), rgba(22,33,62,.95));
@@ -250,6 +252,7 @@ body {
   display: flex; align-items: center; gap: 8px;
   backdrop-filter: blur(8px);
 }
+/* .hidden sobrepõe o display:flex acima — NUNCA remover o !important */
 .host-ctrl-bar.hidden { display: none !important; }
 .hcb-pin { font-family:'Fredoka One',cursive; color: var(--gold); font-size:.85rem; letter-spacing:.1em; }
 .hcb-btn { padding: 6px 14px; border:none; border-radius:50px; font-family:'Fredoka One',cursive; font-size:.85rem; cursor:pointer; transition:all .14s; }
@@ -794,29 +797,42 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 's-ranking') fetchRanking();
-  // [ALTERAÇÃO 1] Mostrar barra do anfitrião apenas nos ecrãs de jogo do host
-  const hostScreens = ['s-host-lobby','s-host-quiz','s-host-reveal','s-host-over'];
+
+  // ── Barra de controlo do anfitrião ──────────────────────────────────────
+  // Regra: a barra aparece em TODOS os ecrãs do host EXCETO no ecrã final.
+  // Cada ecrã define quais botões estão visíveis; os outros ficam escondidos.
+  // Desta forma o botão "Próxima" nunca desaparece inesperadamente.
+  const hostScreens = ['s-host-lobby', 's-host-quiz', 's-host-reveal', 's-host-over'];
   const bar = document.getElementById('hostCtrlBar');
   if (role === 'host' && hostScreens.includes(id)) {
     if (id === 's-host-over') {
+      // Jogo terminado — esconder toda a barra
       bar.classList.add('hidden');
     } else {
       bar.classList.remove('hidden');
+      const startBtn = document.getElementById('hcbStartBtn');
+      const nextBtn  = document.getElementById('hcbNextBtn');
       if (id === 's-host-lobby') {
-        document.getElementById('hcbStartBtn').style.display = '';
-        document.getElementById('hcbNextBtn').style.display = 'none';
+        // Sala de espera: mostrar "Iniciar", esconder "Próxima"
+        startBtn.style.display = '';
+        nextBtn.style.display  = 'none';
       } else if (id === 's-host-quiz') {
-        document.getElementById('hcbStartBtn').style.display = 'none';
-        document.getElementById('hcbNextBtn').style.display = 'none';
+        // Durante a pergunta: esconder ambos (host está a responder)
+        startBtn.style.display = 'none';
+        nextBtn.style.display  = 'none';
       } else if (id === 's-host-reveal') {
-        document.getElementById('hcbStartBtn').style.display = 'none';
-        document.getElementById('hcbNextBtn').style.display = '';
+        // Após revelar resposta: mostrar "Próxima", esconder "Iniciar"
+        startBtn.style.display = 'none';
+        nextBtn.style.display  = '';
       }
     }
   } else if (!hostScreens.includes(id)) {
+    // Ecrã de jogador ou menu — garantir que a barra está escondida
     bar.classList.add('hidden');
   }
-  // [ALTERAÇÃO 2] Fechar modais ao navegar
+  // ────────────────────────────────────────────────────────────────────────
+
+  // Fechar modais ao navegar
   document.querySelectorAll('.modal-ov').forEach(m => m.classList.remove('show'));
   playClick();
 }
@@ -886,9 +902,10 @@ function joinGame() {
 function sendAnswer(idx) {
   if (answered) return;
   answered = true;
-  // [ALTERAÇÃO 1] Desabilitar botões do ecrã correto (host ou player)
-  const container = role === 'host' ? '#hAnswers .ans-btn' : '#pAnswers .ans-btn';
-  document.querySelectorAll(container).forEach(b => { b.classList.add('dim'); b.disabled = true; });
+  // Desabilitar apenas os botões do ecrã correto (host ou jogador)
+  // Usar selectors com ID de container para não interferir entre os dois ecrãs
+  const selector = role === 'host' ? '#hAnswers .ans-btn' : '#pAnswers .ans-btn';
+  document.querySelectorAll(selector).forEach(b => { b.classList.add('dim'); b.disabled = true; });
   send({ type: 'answer', answer: idx });
   playClick();
 }
@@ -905,9 +922,9 @@ function handleMsg(msg) {
       document.getElementById('pinDisplay').textContent = msg.pin;
       document.getElementById('playerCount').textContent = '0';
       document.getElementById('playersGrid').innerHTML = '';
-      // [ALTERAÇÃO 1] Atualizar PIN na barra de controlo
+      // Atualizar PIN na barra — go('s-host-lobby') trata de mostrar a barra e os botões certos
       document.getElementById('hcbPin').textContent = '📌 ' + msg.pin;
-      go('s-host-lobby'); // go() trata de mostrar a barra e o botão correto
+      go('s-host-lobby');
       break;
 
     case 'player_joined':
@@ -1014,16 +1031,16 @@ function handleMsg(msg) {
     case 'reveal':
       hideFeedback();
       if (role === 'host') {
+        // renderHostReveal chama go('s-host-reveal') que mostra o botão "Próxima" automaticamente
         renderHostReveal(msg);
-        // [ALTERAÇÃO 1] Destacar resposta correta nas opções do anfitrião
-        const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
-        hBtns.forEach((b, i) => {
+        // Destacar a resposta correta nos botões do anfitrião
+        document.querySelectorAll('#hAnswers .ans-btn').forEach((b, i) => {
           b.disabled = true;
-          if (i === msg.correct) b.classList.add('correct');
-          else b.classList.add('dim');
+          b.classList.add(i === msg.correct ? 'correct' : 'dim');
         });
+      } else {
+        renderPlayerReveal(msg);
       }
-      else renderPlayerReveal(msg);
       break;
 
     case 'eliminated':
@@ -1107,13 +1124,15 @@ function renderHostQuestion(msg) {
 }
 
 function renderHostReveal(msg) {
-  const title = document.getElementById('revealTitle');
-  title.textContent = `✅ Resposta: Opção ${['A','B','C','D'][msg.correct]}`;
+  document.getElementById('revealTitle').textContent =
+    `✅ Resposta: Opção ${['A','B','C','D'][msg.correct]}`;
   const expl = document.getElementById('revealExpl');
   if (msg.explanation) { expl.textContent = '💡 ' + msg.explanation; expl.style.display = ''; }
   else expl.style.display = 'none';
   renderLb(document.getElementById('revealLb'), msg.leaderboard);
+  // Limpar contador de respostas na barra
   document.getElementById('hcbAnswered').textContent = '';
+  // go() trata de mostrar o botão "Próxima" e esconder o "Iniciar"
   go('s-host-reveal');
 }
 
@@ -1141,8 +1160,8 @@ function renderPlayerQuestion(msg) {
   document.getElementById('pIcon').textContent = msg.icon;
   document.getElementById('pQ').textContent = msg.q;
   document.getElementById('pSbName').textContent = myName.substring(0,12);
-  const btns = document.querySelectorAll('#pAnswers .ans-btn');
-  btns.forEach((b,i) => {
+  // IMPORTANTE: usar #pAnswers para não apanhar os botões do ecrã do host
+  document.querySelectorAll('#pAnswers .ans-btn').forEach((b, i) => {
     b.querySelector('.at').textContent = msg.answers[i];
     b.className = 'ans-btn';
     b.disabled = false;
