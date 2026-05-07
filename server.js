@@ -610,7 +610,7 @@ server.listen(PORT, () => {
 // DEFAULT DATA
 // ═══════════════════════════════════════════════════════
 function getDefaultSettings() {
-  return { adminPassword: 'admin123', gameName: 'Quiz Bíblico', maxPlayers: 30 };
+  return { adminPassword: 'admin123', gameName: 'Ovelha Inteligente', maxPlayers: 30 };
 }
 
 function getDefaultQuestions() {
