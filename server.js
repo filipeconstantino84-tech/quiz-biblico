@@ -92,8 +92,85 @@ appData.questions = loadQuestions(); // referência em memória para o jogo
 let pendingQuestions = loadPending();
 
 // ═══════════════════════════════════════════════════════
-// GAMES STATE
+// GITHUB SYNC — commit automático de questions.json
+// Configurar via variáveis de ambiente no Render:
+//   GITHUB_TOKEN  → Personal Access Token (scope: repo)
+//   GITHUB_REPO   → ex: "utilizador/ovelha-inteligente"
+//   GITHUB_BRANCH → ex: "main"  (padrão: "main")
+// Se as variáveis não estiverem definidas, o sync é ignorado
+// e o jogo continua a funcionar normalmente com ficheiros locais.
 // ═══════════════════════════════════════════════════════
+const GH_TOKEN  = process.env.GITHUB_TOKEN  || '';
+const GH_REPO   = process.env.GITHUB_REPO   || '';
+const GH_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const GH_PATH   = 'questions.json'; // caminho do ficheiro no repositório
+
+async function syncQuestionsToGitHub(questions, commitMessage) {
+  // Silencioso se não configurado
+  if (!GH_TOKEN || !GH_REPO) {
+    console.log('ℹ️  GitHub sync não configurado (GITHUB_TOKEN / GITHUB_REPO não definidos).');
+    return { ok: false, reason: 'not_configured' };
+  }
+
+  const apiBase = `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`;
+  const headers = {
+    'Authorization': `Bearer ${GH_TOKEN}`,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  try {
+    // 1. Obter SHA atual do ficheiro (necessário para o PUT)
+    let sha = null;
+    const getResp = await fetch(`${apiBase}?ref=${GH_BRANCH}`, { headers });
+    if (getResp.ok) {
+      const current = await getResp.json();
+      sha = current.sha;
+    } else if (getResp.status !== 404) {
+      const err = await getResp.text();
+      console.error('GitHub GET erro:', getResp.status, err);
+      return { ok: false, reason: 'get_failed', status: getResp.status };
+    }
+
+    // 2. Codificar conteúdo em Base64
+    const content = Buffer.from(JSON.stringify(questions, null, 2), 'utf8').toString('base64');
+
+    // 3. Fazer PUT (criar ou atualizar)
+    const body = {
+      message: commitMessage || `🐑 Ovelha Inteligente: atualizar questions.json [${new Date().toISOString()}]`,
+      content,
+      branch: GH_BRANCH,
+      ...(sha ? { sha } : {}), // obrigatório para atualizar, omitir para criar
+    };
+
+    const putResp = await fetch(apiBase, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (putResp.ok) {
+      const result = await putResp.json();
+      console.log(`✅ GitHub sync: commit ${result.commit?.sha?.substring(0,7)} — ${commitMessage}`);
+      return { ok: true, sha: result.commit?.sha };
+    } else {
+      const err = await putResp.text();
+      console.error('GitHub PUT erro:', putResp.status, err);
+      return { ok: false, reason: 'put_failed', status: putResp.status, detail: err };
+    }
+  } catch (e) {
+    console.error('GitHub sync erro de rede:', e.message);
+    return { ok: false, reason: 'network_error', detail: e.message };
+  }
+}
+
+// Wrapper: grava localmente + faz commit no GitHub
+async function saveQuestionsAndSync(questions, commitMsg) {
+  saveQuestions(questions);                         // sempre grava localmente primeiro
+  const result = await syncQuestionsToGitHub(questions, commitMsg);
+  return result;
+}
 const games = new Map(); // pin -> gameState
 
 function generatePIN() {
@@ -457,12 +534,17 @@ wss.on('connection', (ws) => {
         break;
       }
 
-      // ─── ADMIN: Save questions → questions.json ───
+      // ─── ADMIN: Save questions → questions.json + GitHub ───
       case 'admin_save_questions': {
         if (!ws.isAdmin) return;
         appData.questions = msg.questions;
-        saveQuestions(appData.questions); // grava em questions.json
-        sendToWs(ws, { type: 'admin_saved', msg: `✅ ${appData.questions.length} perguntas guardadas em questions.json!` });
+        saveQuestionsAndSync(
+          appData.questions,
+          `✏️ Admin editou perguntas — total: ${appData.questions.length}`
+        ).then(r => {
+          const ghMsg = r.ok ? ' (GitHub ✅)' : r.reason === 'not_configured' ? '' : ' (GitHub ⚠️)';
+          sendToWs(ws, { type: 'admin_saved', msg: `✅ ${appData.questions.length} perguntas guardadas!${ghMsg}` });
+        });
         break;
       }
 
@@ -499,32 +581,37 @@ wss.on('connection', (ws) => {
         break;
       }
 
-      // ─── ADMIN: Approve suggestion ───
-      // Move de pendingQuestions.json para questions.json
+      // ─── ADMIN: Approve suggestion → questions.json + GitHub ───
       case 'admin_approve_question': {
         if (!ws.isAdmin) return;
         const idx = pendingQuestions.findIndex(p => p.id === msg.id);
         if (idx === -1) { sendToWs(ws, { type: 'admin_error', msg: 'Sugestão não encontrada.' }); return; }
         const approved = pendingQuestions.splice(idx, 1)[0];
-        // Converter para formato de pergunta aprovada
+        // Usar dificuldade escolhida pelo admin no dropdown (ou a original)
+        const finalDiff = msg.diff || approved.diff || 'facil';
         const newQ = {
           id: approved.id,
           q: approved.q,
           a: approved.a,
           correct: approved.correct,
           cat: approved.cat,
-          diff: approved.diff,
+          diff: finalDiff,
           icon: approved.icon || '📖',
           explanation: approved.explanation || '',
         };
         appData.questions.push(newQ);
-        saveQuestions(appData.questions); // → questions.json
-        savePending(pendingQuestions);    // → pendingQuestions.json (removida)
-        sendToWs(ws, {
-          type: 'admin_approved',
-          msg: `✅ Pergunta aprovada! Total: ${appData.questions.length} perguntas.`,
-          pending: pendingQuestions,
-          totalQuestions: appData.questions.length,
+        savePending(pendingQuestions); // remover de pendingQuestions.json
+        saveQuestionsAndSync(
+          appData.questions,
+          `✅ Sugestão aprovada: "${newQ.q.substring(0,50)}" [${finalDiff}]`
+        ).then(r => {
+          const ghMsg = r.ok ? ' (GitHub ✅)' : r.reason === 'not_configured' ? '' : ' (GitHub ⚠️)';
+          sendToWs(ws, {
+            type: 'admin_approved',
+            msg: `✅ Pergunta aprovada! Total: ${appData.questions.length} perguntas.${ghMsg}`,
+            pending: pendingQuestions,
+            totalQuestions: appData.questions.length,
+          });
         });
         break;
       }
@@ -610,7 +697,7 @@ server.listen(PORT, () => {
 // DEFAULT DATA
 // ═══════════════════════════════════════════════════════
 function getDefaultSettings() {
-  return { adminPassword: 'admin123', gameName: 'Ovelha Inteligente', maxPlayers: 30 };
+  return { adminPassword: 'admin123', gameName: 'Quiz Bíblico', maxPlayers: 30 };
 }
 
 function getDefaultQuestions() {
@@ -638,7 +725,7 @@ function getDefaultQuestions() {
     { id:21, q:"Quantos dias Jesus ficou no deserto sendo tentado?", a:["20","30","40","50"], correct:2, cat:"nt", icon:"🏜️", diff:"facil", explanation:"Jesus passou 40 dias e 40 noites no deserto, sendo tentado pelo diabo (Mateus 4:2)." },
     { id:22, q:"Quantos salmos tem o livro dos Salmos?", a:["100","120","150","200"], correct:2, cat:"ot", icon:"🎵", diff:"medio", explanation:"O livro dos Salmos possui 150 salmos, muitos atribuídos ao rei Davi." },
     { id:23, q:"Qual animal falou com Balaão?", a:["Leão","Jumento","Serpente","Corvo"], correct:1, cat:"ot", icon:"🐴", diff:"medio", explanation:"O jumento de Balaão falou por milagre de Deus (Números 22:28)." },
-    { id:24, q:"Onde Jesus foi morto?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", diff:"medio", explanation:"Jesus foi colocado numa estaca de tortura no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
+    { id:24, q:"Onde Jesus foi morto?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", diff:"medio", explanation:"Jesus foi morto no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
     { id:25, q:"Qual é o versículo mais curto da Bíblia?", a:["João 3:16","João 11:35","Salmos 23:1","Filipenses 4:4"], correct:1, cat:"ot", icon:"📝", diff:"dificil", explanation:"'Jesus chorou' (João 11:35) é o versículo mais curto da Bíblia em português." },
     { id:26, q:"Quem construiu o templo de Jerusalém?", a:["Davi","Salomão","Josafá","Ezequias"], correct:1, cat:"personagens", icon:"🏛️", diff:"medio", explanation:"Salomão construiu o primeiro Templo de Jerusalém (1 Reis 6)." },
     { id:27, q:"Quantos anos Noé tinha quando entrou na arca?", a:["300","500","600","700"], correct:2, cat:"ot", icon:"👴", diff:"dificil", explanation:"Noé tinha 600 anos quando as águas do dilúvio vieram sobre a terra (Gênesis 7:6)." },
