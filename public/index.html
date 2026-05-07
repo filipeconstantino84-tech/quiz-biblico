@@ -492,6 +492,12 @@ body {
         <option value="personagens">Personagens</option>
         <option value="milagres">Milagres</option>
       </select>
+      <label class="lbl">⚡ Dificuldade</label>
+      <select class="sel" id="sug-diff">
+        <option value="facil">😊 Fácil</option>
+        <option value="medio">🔥 Média</option>
+        <option value="dificil">💀 Difícil</option>
+      </select>
       <button class="btn btn-green" onclick="submitSuggestion()" style="margin:0">📤 Enviar Sugestão</button>
     </div>
     <div id="suggestThanks" style="display:none;text-align:center;padding:20px">
@@ -843,6 +849,44 @@ body {
   <div id="tab-ranking" style="display:none;width:100%;max-width:420px">
     <div id="adminRankList" style="background:rgba(255,255,255,.93);border-radius:20px;padding:14px;max-height:400px;overflow-y:auto;margin-bottom:10px"></div>
     <button class="btn btn-red" onclick="adminClearRanking()" style="max-width:200px">🗑️ Limpar Ranking</button>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: EDITAR PERGUNTA (ADMIN) ══════════════ -->
+<div class="modal-ov" id="modal-edit-q" onclick="closeModalOv(event,this)" style="z-index:200">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Editar Pergunta</div>
+    <input type="hidden" id="eq-index">
+    <label class="lbl">📝 Pergunta</label>
+    <input class="inp" id="eq-q" placeholder="Texto da pergunta">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      <div><label class="lbl" style="font-size:.7rem">🔵 Opção A</label><input class="inp" id="eq-a0" placeholder="Opção A" style="margin:0"></div>
+      <div><label class="lbl" style="font-size:.7rem">🟠 Opção B</label><input class="inp" id="eq-a1" placeholder="Opção B" style="margin:0"></div>
+      <div><label class="lbl" style="font-size:.7rem">🟣 Opção C</label><input class="inp" id="eq-a2" placeholder="Opção C" style="margin:0"></div>
+      <div><label class="lbl" style="font-size:.7rem">🟢 Opção D</label><input class="inp" id="eq-a3" placeholder="Opção D" style="margin:0"></div>
+    </div>
+    <label class="lbl">✅ Resposta Correta</label>
+    <select class="sel" id="eq-correct">
+      <option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option>
+    </select>
+    <label class="lbl">🏷️ Categoria</label>
+    <select class="sel" id="eq-cat">
+      <option value="ot">AT — Escrituras Hebraicas</option>
+      <option value="nt">NT — Escrituras Gregas Cristãs</option>
+      <option value="personagens">Personagens</option>
+      <option value="milagres">Milagres</option>
+    </select>
+    <label class="lbl">⚡ Dificuldade</label>
+    <select class="sel" id="eq-diff">
+      <option value="facil">😊 Fácil</option>
+      <option value="medio">🔥 Média</option>
+      <option value="dificil">💀 Difícil</option>
+    </select>
+    <label class="lbl">💡 Explicação (opcional)</label>
+    <input class="inp" id="eq-expl" placeholder="Explicação da resposta correta">
+    <button class="btn btn-green" onclick="adminSaveEdit()" style="margin:4px 0">💾 Guardar Alterações</button>
+    <button class="btn btn-red" onclick="document.getElementById('modal-edit-q').classList.remove('show')" style="margin:0;font-size:.9rem;padding:10px">✖ Cancelar</button>
   </div>
 </div>
 
@@ -1515,11 +1559,28 @@ function renderAdminStats(s) {
 
 function renderAdminQList() {
   const qs = adminData?.questions || [];
-  document.getElementById('qList').innerHTML = qs.map((q,i) => `
+  const diffLabel = { facil:'😊 Fácil', medio:'🔥 Média', dificil:'💀 Difícil' };
+  const catLabel  = { ot:'AT', nt:'NT', personagens:'Personagens', milagres:'Milagres' };
+  document.getElementById('qList').innerHTML = qs.length === 0
+    ? '<p style="text-align:center;color:#888;padding:16px">Nenhuma pergunta. Adiciona uma acima.</p>'
+    : qs.map((q, i) => `
     <div style="background:rgba(255,255,255,.9);border-radius:14px;padding:10px 12px;margin-bottom:6px;border-left:4px solid var(--pink)">
-      <div style="font-weight:800;font-size:.9rem;margin-bottom:4px">${q.q}</div>
-      <div style="font-size:.78rem;color:#666">${q.a?.join(' | ')} — ✅ ${['A','B','C','D'][q.correct]} — <span style="color:var(--pink)">${q.cat}</span> — ${q.diff}</div>
-      <button onclick="adminDelQ(${i})" style="background:var(--red);color:white;border:none;border-radius:8px;padding:3px 10px;font-size:.75rem;cursor:pointer;margin-top:4px">🗑️ Remover</button>
+      <div style="font-weight:800;font-size:.88rem;margin-bottom:4px;line-height:1.3">${q.q}</div>
+      <div style="font-size:.75rem;color:#666;margin-bottom:6px">
+        ✅ ${['A','B','C','D'][q.correct]}: <em>${q.a?.[q.correct]||''}</em>
+        &nbsp;|&nbsp; 📂 ${catLabel[q.cat]||q.cat}
+        &nbsp;|&nbsp; ⚡ ${diffLabel[q.diff]||q.diff}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="openEditQ(${i})"
+                style="flex:1;background:linear-gradient(180deg,#5dade2,#2980b9);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:.78rem;cursor:pointer;font-weight:700">
+          ✏️ Editar
+        </button>
+        <button onclick="adminDelQ(${i})"
+                style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:5px 10px;font-size:.78rem;cursor:pointer;font-weight:700">
+          🗑️ Remover
+        </button>
+      </div>
     </div>`).join('');
 }
 
@@ -1535,16 +1596,25 @@ function renderPendingList(pending) {
   el.innerHTML = pending.map(p => `
     <div style="background:rgba(255,255,255,.95);border-radius:16px;padding:14px;margin-bottom:10px;border-left:5px solid #e67e22;box-shadow:0 2px 8px rgba(0,0,0,.08)">
       <div style="font-weight:800;font-size:.95rem;margin-bottom:6px;color:#333">${p.q}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
         ${p.a.map((opt, i) => `
           <div style="font-size:.8rem;padding:4px 8px;border-radius:8px;background:${i===p.correct?'#e8f5e9':'#f5f5f5'};color:${i===p.correct?'#2e7d32':'#555'};font-weight:${i===p.correct?'800':'400'}">
             ${['A','B','C','D'][i]}: ${opt}${i===p.correct?' ✅':''}
           </div>`).join('')}
       </div>
       <div style="font-size:.75rem;color:#888;margin-bottom:8px">
-        📂 ${catLabel[p.cat]||p.cat} &nbsp;|&nbsp; ⚡ ${p.diff} &nbsp;|&nbsp; 👤 ${p.submittedBy||'Anónimo'}
+        📂 ${catLabel[p.cat]||p.cat} &nbsp;|&nbsp; 👤 ${p.submittedBy||'Anónimo'}
         ${p.ref ? `&nbsp;|&nbsp; 📖 ${p.ref}` : ''}
         ${p.explanation ? `<br>💡 <em>${p.explanation}</em>` : ''}
+      </div>
+      <!-- Admin pode ajustar dificuldade antes de aprovar -->
+      <div style="margin-bottom:8px">
+        <label style="font-size:.75rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.04em">⚡ Dificuldade (ajustar antes de aprovar)</label>
+        <select id="pend-diff-${p.id}" class="sel" style="margin:4px 0 0;font-size:.85rem">
+          <option value="facil"   ${p.diff==='facil'   ?'selected':''}>😊 Fácil</option>
+          <option value="medio"   ${p.diff==='medio'   ?'selected':''}>🔥 Média</option>
+          <option value="dificil" ${p.diff==='dificil' ?'selected':''}>💀 Difícil</option>
+        </select>
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="adminApprove(${p.id})"
@@ -1560,13 +1630,57 @@ function renderPendingList(pending) {
 }
 
 function adminApprove(id) {
-  send({ type: 'admin_approve_question', id });
+  // Ler dificuldade escolhida pelo admin antes de aprovar
+  const diffEl = document.getElementById(`pend-diff-${id}`);
+  const diff = diffEl ? diffEl.value : 'facil';
+  send({ type: 'admin_approve_question', id, diff });
 }
 
 function adminReject(id) {
   if (confirm('Rejeitar esta sugestão? Será removida permanentemente.')) {
     send({ type: 'admin_reject_question', id });
   }
+}
+
+// Abrir modal de edição preenchido com os dados da pergunta
+function openEditQ(i) {
+  const q = adminData.questions[i];
+  if (!q) return;
+  document.getElementById('eq-index').value   = i;
+  document.getElementById('eq-q').value       = q.q;
+  document.getElementById('eq-a0').value      = q.a[0] || '';
+  document.getElementById('eq-a1').value      = q.a[1] || '';
+  document.getElementById('eq-a2').value      = q.a[2] || '';
+  document.getElementById('eq-a3').value      = q.a[3] || '';
+  document.getElementById('eq-correct').value = q.correct;
+  document.getElementById('eq-cat').value     = q.cat;
+  document.getElementById('eq-diff').value    = q.diff || 'facil';
+  document.getElementById('eq-expl').value    = q.explanation || '';
+  document.getElementById('modal-edit-q').classList.add('show');
+}
+
+// Guardar edição e enviar para o servidor (que faz commit no GitHub)
+function adminSaveEdit() {
+  const i  = parseInt(document.getElementById('eq-index').value);
+  const q  = document.getElementById('eq-q').value.trim();
+  const a0 = document.getElementById('eq-a0').value.trim();
+  const a1 = document.getElementById('eq-a1').value.trim();
+  const a2 = document.getElementById('eq-a2').value.trim();
+  const a3 = document.getElementById('eq-a3').value.trim();
+  if (!q || !a0 || !a1 || !a2 || !a3) { showToast('Preencha todos os campos!'); return; }
+  adminData.questions[i] = {
+    ...adminData.questions[i],
+    q, a: [a0, a1, a2, a3],
+    correct: parseInt(document.getElementById('eq-correct').value),
+    cat: document.getElementById('eq-cat').value,
+    diff: document.getElementById('eq-diff').value,
+    explanation: document.getElementById('eq-expl').value.trim(),
+  };
+  document.getElementById('modal-edit-q').classList.remove('show');
+  renderAdminQList();
+  // Guardar imediatamente (inclui commit no GitHub se configurado)
+  send({ type: 'admin_save_questions', questions: adminData.questions });
+  showToast('✅ Pergunta editada e guardada!');
 }
 
 function adminAddQ() {
@@ -1713,8 +1827,9 @@ function submitSuggestion() {
       a: [a0, a1, a2, a3],
       correct: parseInt(document.getElementById('sug-correct').value),
       cat: document.getElementById('sug-cat').value,
+      diff: document.getElementById('sug-diff').value,
       ref,
-      explanation: '', // campo opcional (pode ser adicionado ao form)
+      explanation: '',
       submittedBy: myName || 'Anónimo',
     });
   });
@@ -1729,6 +1844,8 @@ function resetSuggestForm() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const diff = document.getElementById('sug-diff');
+  if (diff) diff.value = 'facil';
   document.getElementById('suggestForm').style.display = '';
   document.getElementById('suggestThanks').style.display = 'none';
 }
