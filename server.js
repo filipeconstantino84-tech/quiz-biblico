@@ -12,22 +12,84 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ═══════════════════════════════════════════════════════
-// DATA PERSISTENCE (JSON file, no DB needed)
+// DATA PERSISTENCE — 3 ficheiros JSON separados
+//   data.json             → settings + ranking
+//   questions.json        → perguntas aprovadas (usadas no jogo)
+//   pendingQuestions.json → sugestões pendentes aguardando revisão admin
 // ═══════════════════════════════════════════════════════
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_FILE     = path.join(__dirname, 'data.json');
+const Q_FILE        = path.join(__dirname, 'questions.json');
+const PENDING_FILE  = path.join(__dirname, 'pendingQuestions.json');
 
-function loadData() {
+// ── Leitura genérica ──────────────────────────────────
+function readJson(filePath, fallback) {
   try {
-    if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (e) {}
-  return { questions: getDefaultQuestions(), settings: getDefaultSettings(), ranking: [] };
+    if (fs.existsSync(filePath)) return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (e) { console.error(`Erro a ler ${filePath}:`, e.message); }
+  return fallback;
+}
+
+// ── Escrita genérica (síncrona, como pedido) ──────────
+function writeJson(filePath, data) {
+  try { fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8'); }
+  catch (e) { console.error(`Erro a gravar ${filePath}:`, e.message); }
+}
+
+// ── questions.json ────────────────────────────────────
+function loadQuestions() {
+  // Migração: se questions.json não existir mas data.json tiver perguntas,
+  // migra automaticamente para o novo ficheiro
+  if (!fs.existsSync(Q_FILE) && fs.existsSync(DATA_FILE)) {
+    try {
+      const old = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      if (Array.isArray(old.questions) && old.questions.length > 0) {
+        writeJson(Q_FILE, old.questions);
+        console.log(`✅ Migração: ${old.questions.length} perguntas movidas para questions.json`);
+        return old.questions;
+      }
+    } catch (e) {}
+  }
+  const qs = readJson(Q_FILE, null);
+  if (qs) return qs;
+  // Primeiro arranque — criar ficheiro com perguntas padrão
+  const defaults = getDefaultQuestions();
+  writeJson(Q_FILE, defaults);
+  return defaults;
+}
+
+function saveQuestions(questions) {
+  writeJson(Q_FILE, questions);
+}
+
+// ── pendingQuestions.json ─────────────────────────────
+function loadPending() {
+  return readJson(PENDING_FILE, []);
+}
+
+function savePending(pending) {
+  writeJson(PENDING_FILE, pending);
+}
+
+// ── data.json (settings + ranking apenas) ────────────
+function loadData() {
+  const defaults = { settings: getDefaultSettings(), ranking: [] };
+  const d = readJson(DATA_FILE, defaults);
+  // Garantir que os campos existem (compatibilidade com versões antigas)
+  if (!d.settings) d.settings = getDefaultSettings();
+  if (!d.ranking)  d.ranking  = [];
+  return d;
 }
 
 function saveData(data) {
-  try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (e) {}
+  // Nunca guardar perguntas em data.json — ficam em questions.json
+  const { questions: _removed, ...clean } = data;
+  writeJson(DATA_FILE, clean);
 }
 
+// ── Carregar tudo no arranque ─────────────────────────
 let appData = loadData();
+appData.questions = loadQuestions(); // referência em memória para o jogo
+let pendingQuestions = loadPending();
 
 // ═══════════════════════════════════════════════════════
 // GAMES STATE
@@ -283,7 +345,7 @@ function endGame(game) {
   }
   appData.ranking.sort((a, b) => b.score - a.score);
   appData.ranking = appData.ranking.slice(0, 50);
-  saveData(appData);
+  saveData(appData); // grava ranking em data.json
 
   broadcastAll(game, { type: 'game_over', leaderboard });
 
@@ -384,37 +446,120 @@ wss.on('connection', (ws) => {
         const pass = appData.settings.adminPassword || 'admin123';
         if (msg.password === pass) {
           ws.isAdmin = true;
-          sendToWs(ws, { type: 'admin_ok', data: appData });
+          // Enviar dados completos incluindo sugestões pendentes
+          sendToWs(ws, {
+            type: 'admin_ok',
+            data: { ...appData, pending: pendingQuestions },
+          });
         } else {
           sendToWs(ws, { type: 'admin_error', msg: 'Senha incorreta!' });
         }
         break;
       }
 
-      // ─── ADMIN: Save questions ───
+      // ─── ADMIN: Save questions → questions.json ───
       case 'admin_save_questions': {
         if (!ws.isAdmin) return;
         appData.questions = msg.questions;
-        saveData(appData);
-        sendToWs(ws, { type: 'admin_saved', msg: 'Perguntas salvas com sucesso!' });
+        saveQuestions(appData.questions); // grava em questions.json
+        sendToWs(ws, { type: 'admin_saved', msg: `✅ ${appData.questions.length} perguntas guardadas em questions.json!` });
         break;
       }
 
-      // ─── ADMIN: Save settings ───
+      // ─── PLAYER: Submit suggestion → pendingQuestions.json ───
+      case 'submit_suggestion': {
+        // Qualquer cliente pode enviar sugestões (não requer autenticação)
+        const sug = {
+          id: Date.now(),
+          submittedAt: new Date().toISOString(),
+          submittedBy: msg.submittedBy || 'Anónimo',
+          q: (msg.q || '').trim(),
+          a: msg.a || [],
+          correct: typeof msg.correct === 'number' ? msg.correct : 0,
+          cat: msg.cat || 'ot',
+          diff: msg.diff || 'facil',
+          ref: (msg.ref || '').trim(),
+          icon: '📖',
+          explanation: (msg.explanation || '').trim(),
+        };
+        // Validação mínima
+        if (!sug.q || sug.a.length < 4 || sug.a.some(x => !x.trim())) {
+          sendToWs(ws, { type: 'suggestion_error', msg: 'Preencha a pergunta e as 4 opções!' });
+          return;
+        }
+        pendingQuestions.push(sug);
+        savePending(pendingQuestions); // grava em pendingQuestions.json
+        sendToWs(ws, { type: 'suggestion_received', msg: '🙏 Sugestão recebida! Será analisada pelo administrador.' });
+        // Notificar admins conectados
+        wss.clients.forEach(c => {
+          if (c.isAdmin && c.readyState === WebSocket.OPEN) {
+            sendToWs(c, { type: 'admin_pending_update', pending: pendingQuestions });
+          }
+        });
+        break;
+      }
+
+      // ─── ADMIN: Approve suggestion ───
+      // Move de pendingQuestions.json para questions.json
+      case 'admin_approve_question': {
+        if (!ws.isAdmin) return;
+        const idx = pendingQuestions.findIndex(p => p.id === msg.id);
+        if (idx === -1) { sendToWs(ws, { type: 'admin_error', msg: 'Sugestão não encontrada.' }); return; }
+        const approved = pendingQuestions.splice(idx, 1)[0];
+        // Converter para formato de pergunta aprovada
+        const newQ = {
+          id: approved.id,
+          q: approved.q,
+          a: approved.a,
+          correct: approved.correct,
+          cat: approved.cat,
+          diff: approved.diff,
+          icon: approved.icon || '📖',
+          explanation: approved.explanation || '',
+        };
+        appData.questions.push(newQ);
+        saveQuestions(appData.questions); // → questions.json
+        savePending(pendingQuestions);    // → pendingQuestions.json (removida)
+        sendToWs(ws, {
+          type: 'admin_approved',
+          msg: `✅ Pergunta aprovada! Total: ${appData.questions.length} perguntas.`,
+          pending: pendingQuestions,
+          totalQuestions: appData.questions.length,
+        });
+        break;
+      }
+
+      // ─── ADMIN: Reject suggestion ───
+      // Remove apenas de pendingQuestions.json
+      case 'admin_reject_question': {
+        if (!ws.isAdmin) return;
+        const rIdx = pendingQuestions.findIndex(p => p.id === msg.id);
+        if (rIdx === -1) { sendToWs(ws, { type: 'admin_error', msg: 'Sugestão não encontrada.' }); return; }
+        const rejected = pendingQuestions.splice(rIdx, 1)[0];
+        savePending(pendingQuestions); // → pendingQuestions.json (removida)
+        sendToWs(ws, {
+          type: 'admin_rejected',
+          msg: `🗑️ Sugestão de "${rejected.q.substring(0,40)}..." rejeitada.`,
+          pending: pendingQuestions,
+        });
+        break;
+      }
+
+      // ─── ADMIN: Save settings → data.json ───
       case 'admin_save_settings': {
         if (!ws.isAdmin) return;
         appData.settings = { ...appData.settings, ...msg.settings };
-        saveData(appData);
-        sendToWs(ws, { type: 'admin_saved', msg: 'Configurações salvas!' });
+        saveData(appData); // grava settings + ranking em data.json (sem perguntas)
+        sendToWs(ws, { type: 'admin_saved', msg: '✅ Configurações guardadas!' });
         break;
       }
 
-      // ─── ADMIN: Clear ranking ───
+      // ─── ADMIN: Clear ranking → data.json ───
       case 'admin_clear_ranking': {
         if (!ws.isAdmin) return;
         appData.ranking = [];
         saveData(appData);
-        sendToWs(ws, { type: 'admin_saved', msg: 'Ranking limpo!' });
+        sendToWs(ws, { type: 'admin_saved', msg: '✅ Ranking limpo!' });
         break;
       }
 
@@ -427,6 +572,7 @@ wss.on('connection', (ws) => {
           activePlayers: [...games.values()].reduce((s, g) => s + g.players.size, 0),
           totalQuestions: appData.questions.length,
           totalRanking: appData.ranking.length,
+          pendingCount: pendingQuestions.length, // novo campo
         });
         break;
       }
@@ -453,9 +599,11 @@ app.get('/api/health', (req, res) => {
 // ═══════════════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🐑 Quiz Bíblico rodando na porta ${PORT}`);
-  console.log(`📖 ${appData.questions.length} perguntas carregadas`);
+  console.log(`🐑 Ovelha Inteligente rodando na porta ${PORT}`);
+  console.log(`📖 ${appData.questions.length} perguntas carregadas de questions.json`);
+  console.log(`⏳ ${pendingQuestions.length} sugestões pendentes em pendingQuestions.json`);
   console.log(`🔐 Senha admin: ${appData.settings.adminPassword || 'admin123'}`);
+  console.log(`📁 Ficheiros: data.json | questions.json | pendingQuestions.json`);
 });
 
 // ═══════════════════════════════════════════════════════
@@ -468,7 +616,7 @@ function getDefaultSettings() {
 function getDefaultQuestions() {
   return [
     { id:1, q:"Quantos livros tem a Bíblia?", a:["66","68","86","76"], correct:0, cat:"ot", icon:"📜", diff:"facil", explanation:"A Bíblia tem 66 livros: 39 no AT e 27 no NT." },
-    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
+    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", icon:"🚢", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
     { id:3, q:"Quem foi o primeiro homem criado por Deus?", a:["Abel","Caim","Noé","Adão"], correct:3, cat:"personagens", icon:"🧑", diff:"facil", explanation:"Adão foi o primeiro homem, criado do pó da terra (Gênesis 2:7)." },
     { id:4, q:"Em qual monte Moisés recebeu os Dez Mandamentos?", a:["Monte Sião","Monte Sinai","Monte Carmelo","Monte Oliveiras"], correct:1, cat:"ot", icon:"⛰️", diff:"facil", explanation:"Deus falou com Moisés no Monte Sinai (Êxodo 19-20)." },
     { id:5, q:"Com que Davi matou o gigante Golias?", a:["Espada","Lança","Funda e pedra","Arco e flecha"], correct:2, cat:"personagens", icon:"🪨", diff:"facil", explanation:"Davi usou uma funda e uma pedra para derrubar Golias (1 Samuel 17:50)." },
@@ -481,7 +629,7 @@ function getDefaultQuestions() {
     { id:12, q:"Quantos pães Jesus usou para alimentar 5000 pessoas?", a:["2","3","5","7"], correct:2, cat:"milagres", icon:"🍞", diff:"facil", explanation:"Jesus usou 5 pães e 2 peixes para alimentar mais de 5000 pessoas (João 6:9-11)." },
     { id:13, q:"Quem foi o rei mais sábio de Israel?", a:["Davi","Saul","Salomão","Roboão"], correct:2, cat:"personagens", icon:"👑", diff:"facil", explanation:"Salomão pediu sabedoria a Deus e foi o rei mais sábio de Israel (1 Reis 3:12)." },
     { id:14, q:"Qual discípulo andou sobre as águas com Jesus?", a:["João","Tiago","Paulo","Pedro"], correct:3, cat:"milagres", icon:"🌊", diff:"medio", explanation:"Pedro caminhou sobre as águas até começar a duvidar (Mateus 14:29-30)." },
-    { id:15, q:"Qual apóstolo era médico?", a:["Lucas","João","Marcos","Tiago"], correct:0, cat:"nt", diff:"medio", explanation:"Lucas era médico e escreveu o Evangelho de Lucas e os Atos dos Apóstolos." },
+    { id:15, q:"Qual apóstolo era médico?", a:["Lucas","João","Marcos","Tiago"], correct:0, cat:"nt", icon:"⚕️", diff:"medio", explanation:"Lucas era médico e escreveu o Evangelho de Lucas e os Atos dos Apóstolos." },
     { id:16, q:"Qual foi o nome do anjo que anunciou o nascimento de Jesus a Maria?", a:["Miguel","Rafael","Gabriel","Uriel"], correct:2, cat:"nt", icon:"👼", diff:"facil", explanation:"O anjo Gabriel foi enviado por Deus a Maria (Lucas 1:26-27)." },
     { id:17, q:"Qual é a profissão de Mateus antes de seguir Jesus?", a:["Pescador","Cobrador de impostos","Carpinteiro","Médico"], correct:1, cat:"nt", icon:"💰", diff:"medio", explanation:"Mateus (Levi) era publicano, cobrador de impostos (Mateus 9:9)." },
     { id:18, q:"Quantas tribos tinha Israel?", a:["10","12","14","16"], correct:1, cat:"ot", icon:"🇮🇱", diff:"medio", explanation:"Israel tinha 12 tribos, descendentes dos 12 filhos de Jacó." },
@@ -490,7 +638,7 @@ function getDefaultQuestions() {
     { id:21, q:"Quantos dias Jesus ficou no deserto sendo tentado?", a:["20","30","40","50"], correct:2, cat:"nt", icon:"🏜️", diff:"facil", explanation:"Jesus passou 40 dias e 40 noites no deserto, sendo tentado pelo diabo (Mateus 4:2)." },
     { id:22, q:"Quantos salmos tem o livro dos Salmos?", a:["100","120","150","200"], correct:2, cat:"ot", icon:"🎵", diff:"medio", explanation:"O livro dos Salmos possui 150 salmos, muitos atribuídos ao rei Davi." },
     { id:23, q:"Qual animal falou com Balaão?", a:["Leão","Jumento","Serpente","Corvo"], correct:1, cat:"ot", icon:"🐴", diff:"medio", explanation:"O jumento de Balaão falou por milagre de Deus (Números 22:28)." },
-    { id:24, q:"Onde Jesus foi crucificado?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", diff:"medio", explanation:"Jesus foi crucificado no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
+    { id:24, q:"Onde Jesus foi morto?", a:["Getsêmani","Gólgota","Betânia","Jericó"], correct:1, cat:"nt", diff:"medio", explanation:"Jesus foi colocado numa estaca de tortura no Gólgota, que significa 'Lugar da Caveira' (João 19:17)." },
     { id:25, q:"Qual é o versículo mais curto da Bíblia?", a:["João 3:16","João 11:35","Salmos 23:1","Filipenses 4:4"], correct:1, cat:"ot", icon:"📝", diff:"dificil", explanation:"'Jesus chorou' (João 11:35) é o versículo mais curto da Bíblia em português." },
     { id:26, q:"Quem construiu o templo de Jerusalém?", a:["Davi","Salomão","Josafá","Ezequias"], correct:1, cat:"personagens", icon:"🏛️", diff:"medio", explanation:"Salomão construiu o primeiro Templo de Jerusalém (1 Reis 6)." },
     { id:27, q:"Quantos anos Noé tinha quando entrou na arca?", a:["300","500","600","700"], correct:2, cat:"ot", icon:"👴", diff:"dificil", explanation:"Noé tinha 600 anos quando as águas do dilúvio vieram sobre a terra (Gênesis 7:6)." },
