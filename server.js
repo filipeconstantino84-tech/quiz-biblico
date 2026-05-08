@@ -11,6 +11,20 @@ const wss = new WebSocket.Server({ server });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── PWA: servir sw.js e manifest.json da raiz do projecto ──
+// Têm de estar no scope '/' para que o SW controle toda a app
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+app.get('/manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+// Ícones PWA
+app.use('/icons', express.static(path.join(__dirname, 'icons')));
+
 // ═══════════════════════════════════════════════════════
 // DATA PERSISTENCE — 3 ficheiros JSON separados
 //   data.json             → settings + ranking
@@ -328,7 +342,9 @@ function startQuestion(game) {
   });
 
   clearInterval(game.timer);
+  game.paused = false; // garantir que começa sem pausa
   game.timer = setInterval(() => {
+    if (game.paused) return; // timer congela se pausado
     game.timeLeft--;
     broadcastAll(game, { type: 'tick', timeLeft: game.timeLeft });
     if (game.timeLeft <= 0) {
@@ -518,6 +534,85 @@ wss.on('connection', (ws) => {
         break;
       }
 
+      // ─── HOST: Pause game ───
+      // Congela o cronómetro e envia overlay de pausa a todos
+      case 'pause_game': {
+        const game = getGame(ws.gamePin);
+        if (!game || game.hostWs !== ws) return;
+        if (game.state !== 'question') return; // só faz sentido durante uma pergunta
+        game.paused = true;
+        // Guardar tempo restante para retomar corretamente
+        game.pausedTimeLeft = game.timeLeft;
+        // Parar o timer
+        if (game.timer) { clearInterval(game.timer); game.timer = null; }
+        broadcastToGame(game, {
+          type: 'game_paused',
+          pausedBy: game.hostName,
+        });
+        console.log(`⏸️  Jogo ${game.pin} pausado pelo anfitrião`);
+        break;
+      }
+
+      // ─── HOST: Resume game ───
+      case 'resume_game': {
+        const game = getGame(ws.gamePin);
+        if (!game || game.hostWs !== ws || !game.paused) return;
+        game.paused = false;
+        broadcastToGame(game, { type: 'game_resumed' });
+        // Retomar o timer de onde ficou
+        const timeLeft = game.pausedTimeLeft ?? game.timeLeft;
+        game.timeLeft = timeLeft;
+        game.timer = setInterval(() => {
+          if (game.paused) return; // segurança extra
+          game.timeLeft--;
+          broadcastToGame(game, { type: 'tick', timeLeft: game.timeLeft });
+          if (game.timeLeft <= 0) {
+            clearInterval(game.timer);
+            game.timer = null;
+            setTimeout(() => revealAnswer(game), 800);
+          }
+        }, 1000);
+        console.log(`▶️  Jogo ${game.pin} retomado`);
+        break;
+      }
+
+      // ─── PLAYER: Leave game ───
+      // O jogador sai, mas a partida continua para os outros
+      case 'leave_game': {
+        const game = getGame(ws.gamePin);
+        if (!game) return;
+        const pid = ws.playerId;
+        const player = game.players.get(pid);
+        if (player && !player.isHost) {
+          game.players.delete(pid);
+          const count = getRealPlayerCount(game);
+          sendToHost(game, { type: 'player_left', id: pid, name: player.name, count, players: getPlayerList(game) });
+          broadcastToGame(game, { type: 'player_left', id: pid, count });
+          console.log(`🚪 Jogador ${player.name} saiu do jogo ${game.pin}`);
+        }
+        ws.gamePin = null;
+        break;
+      }
+
+      // ─── HOST: Abandon game ───
+      // A sala fecha para todos; todos recebem host_left e voltam ao início
+      case 'host_abandon': {
+        const game = getGame(ws.gamePin);
+        if (!game) return;
+        // Parar timer se estiver a correr
+        if (game.timer) { clearInterval(game.timer); game.timer = null; }
+        // Notificar todos os jogadores (exceto o host que já saiu)
+        game.players.forEach((p) => {
+          if (!p.isHost && p.ws.readyState === WebSocket.OPEN) {
+            sendToWs(p.ws, { type: 'host_left', msg: 'O anfitrião abandonou a partida.' });
+          }
+        });
+        games.delete(game.pin);
+        ws.gamePin = null;
+        console.log(`🔴 Anfitrião abandonou jogo ${game.pin}`);
+        break;
+      }
+
       // ─── ADMIN: Auth ───
       case 'admin_auth': {
         const pass = appData.settings.adminPassword || 'admin123';
@@ -703,7 +798,7 @@ function getDefaultSettings() {
 function getDefaultQuestions() {
   return [
     { id:1, q:"Quantos livros tem a Bíblia?", a:["66","68","86","76"], correct:0, cat:"ot", icon:"📜", diff:"facil", explanation:"A Bíblia tem 66 livros: 39 no AT e 27 no NT." },
-    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", icon:"🚢", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
+    { id:2, q:"Quem construiu a Arca para salvar sua família do dilúvio?", a:["Moisés","Abraão","Noé","Elias"], correct:2, cat:"ot", diff:"facil", explanation:"Noé construiu a arca por ordem de Deus (Gênesis 6)." },
     { id:3, q:"Quem foi o primeiro homem criado por Deus?", a:["Abel","Caim","Noé","Adão"], correct:3, cat:"personagens", icon:"🧑", diff:"facil", explanation:"Adão foi o primeiro homem, criado do pó da terra (Gênesis 2:7)." },
     { id:4, q:"Em qual monte Moisés recebeu os Dez Mandamentos?", a:["Monte Sião","Monte Sinai","Monte Carmelo","Monte Oliveiras"], correct:1, cat:"ot", icon:"⛰️", diff:"facil", explanation:"Deus falou com Moisés no Monte Sinai (Êxodo 19-20)." },
     { id:5, q:"Com que Davi matou o gigante Golias?", a:["Espada","Lança","Funda e pedra","Arco e flecha"], correct:2, cat:"personagens", icon:"🪨", diff:"facil", explanation:"Davi usou uma funda e uma pedra para derrubar Golias (1 Samuel 17:50)." },
