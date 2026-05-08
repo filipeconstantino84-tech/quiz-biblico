@@ -445,5 +445,20 @@
     "icon": "👩",
     "diff": "facil",
     "explanation": "Sara foi a esposa de Abraão e mãe de Isaque (Gênesis 17:15)."
+  },
+  {
+    "id": 1778270030684,
+    "q": "Quantos leões havia na fornalha ardente?",
+    "a": [
+      "5",
+      "1",
+      "Nenhum",
+      "37"
+    ],
+    "correct": 2,
+    "cat": "ot",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
