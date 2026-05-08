@@ -1254,6 +1254,7 @@ let myStreak = 0;
 let diffSel = 'facil';
 let qtySel = 10;
 let answered = false;
+let mySelectedAnswer = -1; // índice do botão clicado pelo jogador atual
 let adminData = null;
 // Estado do anfitrião como jogador
 let hostScore = 0;
@@ -1385,10 +1386,14 @@ function joinGame() {
 function sendAnswer(idx) {
   if (answered) return;
   answered = true;
+  mySelectedAnswer = idx;
   // Desabilitar apenas os botões do ecrã correto (host ou jogador)
-  // Usar selectors com ID de container para não interferir entre os dois ecrãs
+  // O botão clicado NÃO fica dim — vai receber cor verde/vermelha depois
   const selector = role === 'host' ? '#hAnswers .ans-btn' : '#pAnswers .ans-btn';
-  document.querySelectorAll(selector).forEach(b => { b.classList.add('dim'); b.disabled = true; });
+  document.querySelectorAll(selector).forEach((b, i) => {
+    b.disabled = true;
+    if (i !== idx) b.classList.add('dim');
+  });
   send({ type: 'answer', answer: idx });
   playClick();
 }
@@ -1511,14 +1516,25 @@ function handleMsg(msg) {
         updateHostPlayerScorebar();
         if (msg.correct) { playCorrect(); showFeedback(true, msg.pts, msg.streak); }
         else { playWrong(); showFeedback(false, 0, 0); }
-        // Marcar respostas no painel do host
-        const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
-        // O host já sabe a correta pelo campo 'correct' da pergunta — não reexibimos aqui
+        // Colorir o botão clicado pelo anfitrião: verde se correto, vermelho se errado
+        if (mySelectedAnswer >= 0) {
+          const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
+          if (hBtns[mySelectedAnswer]) {
+            hBtns[mySelectedAnswer].classList.add(msg.correct ? 'correct' : 'wrong');
+          }
+        }
       } else {
         myScore = msg.score;
         myLives = msg.lives;
         myStreak = msg.streak;
         updatePlayerScorebar();
+        // Colorir o botão clicado: verde se correto, vermelho se errado
+        if (mySelectedAnswer >= 0) {
+          const pBtns = document.querySelectorAll('#pAnswers .ans-btn');
+          if (pBtns[mySelectedAnswer]) {
+            pBtns[mySelectedAnswer].classList.add(msg.correct ? 'correct' : 'wrong');
+          }
+        }
         if (msg.correct) {
           playCorrect();
           showFeedback(true, msg.pts, msg.streak);
@@ -1537,15 +1553,31 @@ function handleMsg(msg) {
       hideFeedback();
       stopHeartbeat(); // parar tensão do tempo
       if (role === 'host') {
-        // renderHostReveal chama go('s-host-reveal') que mostra o botão "Próxima" automaticamente
-        renderHostReveal(msg);
         // Destacar a resposta correta nos botões do anfitrião
         document.querySelectorAll('#hAnswers .ans-btn').forEach((b, i) => {
           b.disabled = true;
-          b.classList.add(i === msg.correct ? 'correct' : 'dim');
+          if (i === msg.correct) {
+            b.classList.remove('dim');
+            b.classList.add('correct');
+          } else if (!b.classList.contains('wrong')) {
+            b.classList.add('dim');
+          }
         });
+        // Delay de 1.5s antes de mostrar o ecrã de revelação com a explicação
+        setTimeout(() => renderHostReveal(msg), 1500);
       } else {
-        renderPlayerReveal(msg);
+        // Destacar a resposta correta nos botões do jogador
+        document.querySelectorAll('#pAnswers .ans-btn').forEach((b, i) => {
+          b.disabled = true;
+          if (i === msg.correct) {
+            b.classList.remove('dim');
+            b.classList.add('correct');
+          } else if (!b.classList.contains('wrong')) {
+            b.classList.add('dim');
+          }
+        });
+        // Delay de 1.5s antes de mostrar o ecrã de revelação com a explicação
+        setTimeout(() => renderPlayerReveal(msg), 1500);
       }
       break;
 
@@ -1651,9 +1683,10 @@ function renderHostQuestion(msg) {
   const hBtns = document.querySelectorAll('#hAnswers .ans-btn');
   hBtns.forEach((b, i) => {
     b.querySelector('.at').textContent = msg.answers[i];
-    b.className = 'ans-btn';
+    b.className = 'ans-btn'; // reset de todas as classes (correct/wrong/dim)
     b.disabled = false;
   });
+  mySelectedAnswer = -1; // reset da seleção anterior
   document.getElementById('hSbName').textContent = (myName||'Anfitrião').substring(0,12);
   updateHostPlayerScorebar();
   document.getElementById('hostLiveLb').innerHTML =
@@ -1705,9 +1738,10 @@ function renderPlayerQuestion(msg) {
   // IMPORTANTE: usar #pAnswers para não apanhar os botões do ecrã do host
   document.querySelectorAll('#pAnswers .ans-btn').forEach((b, i) => {
     b.querySelector('.at').textContent = msg.answers[i];
-    b.className = 'ans-btn';
+    b.className = 'ans-btn'; // reset de todas as classes (correct/wrong/dim)
     b.disabled = false;
   });
+  mySelectedAnswer = -1; // reset da seleção anterior
   updatePlayerScorebar();
   stopHeartbeat();
   go('s-quiz');
