@@ -1,0 +1,449 @@
+[
+  {
+    "id": 1,
+    "q": "Quantos livros tem a Bíblia?",
+    "a": [
+      "66",
+      "68",
+      "86",
+      "76"
+    ],
+    "correct": 0,
+    "cat": "ot",
+    "icon": "📜",
+    "diff": "facil",
+    "explanation": "A Bíblia tem 66 livros: 39 no AT e 27 no NT."
+  },
+  {
+    "id": 2,
+    "q": "Quem construiu a Arca para salvar sua família do dilúvio?",
+    "a": [
+      "Moisés",
+      "Abraão",
+      "Noé",
+      "Elias"
+    ],
+    "correct": 2,
+    "cat": "ot",
+    "diff": "facil",
+    "explanation": "Noé construiu a arca por ordem de Deus (Gênesis 6)."
+  },
+  {
+    "id": 3,
+    "q": "Quem foi o primeiro homem criado por Deus?",
+    "a": [
+      "Abel",
+      "Caim",
+      "Noé",
+      "Adão"
+    ],
+    "correct": 3,
+    "cat": "personagens",
+    "icon": "🧑",
+    "diff": "facil",
+    "explanation": "Adão foi o primeiro homem, criado do pó da terra (Gênesis 2:7)."
+  },
+  {
+    "id": 4,
+    "q": "Em qual monte Moisés recebeu os Dez Mandamentos?",
+    "a": [
+      "Monte Sião",
+      "Monte Sinai",
+      "Monte Carmelo",
+      "Monte Oliveiras"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "icon": "⛰️",
+    "diff": "facil",
+    "explanation": "Deus falou com Moisés no Monte Sinai (Êxodo 19-20)."
+  },
+  {
+    "id": 5,
+    "q": "Com que objeto David matou o gigante Golias?",
+    "a": [
+      "Espada",
+      "Lança",
+      "Funda e pedra",
+      "Arco e flecha"
+    ],
+    "correct": 2,
+    "cat": "personagens",
+    "icon": "🪨",
+    "diff": "facil",
+    "explanation": "Davi usou uma funda e uma pedra para derrubar Golias (1 Samuel 17:50)."
+  },
+  {
+    "id": 6,
+    "q": "Qual era o nome da mãe de Jesus?",
+    "a": [
+      "Marta",
+      "Miriam",
+      "Maria",
+      "Raquel"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "diff": "facil",
+    "explanation": "Maria, escolhida por Deus para ser a mãe de Jesus (Lucas 1:30-31)."
+  },
+  {
+    "id": 7,
+    "q": "Quem batizou Jesus no rio Jordão?",
+    "a": [
+      "Pedro",
+      "Paulo",
+      "João Batista",
+      "André"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "icon": "💧",
+    "diff": "facil",
+    "explanation": "João Batista batizou Jesus no rio Jordão (Mateus 3:13-17)."
+  },
+  {
+    "id": 8,
+    "q": "Qual apóstolo negou Jesus três vezes?",
+    "a": [
+      "João",
+      "Judas",
+      "Tomé",
+      "Pedro"
+    ],
+    "correct": 3,
+    "cat": "nt",
+    "icon": "🐓",
+    "diff": "facil",
+    "explanation": "Pedro negou conhecer Jesus três vezes antes do galo cantar (Lucas 22:61)."
+  },
+  {
+    "id": 9,
+    "q": "Em que cidade Jesus nasceu?",
+    "a": [
+      "Nazaré",
+      "Jerusalém",
+      "Belém",
+      "Jericó"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "icon": "⭐",
+    "diff": "facil",
+    "explanation": "Jesus nasceu em Belém de Judá, conforme a profecia (Miquéias 5:2)."
+  },
+  {
+    "id": 10,
+    "q": "Quem interpretou os sonhos do faraó?",
+    "a": [
+      "Moisés",
+      "Davi",
+      "José",
+      "Samuel"
+    ],
+    "correct": 2,
+    "cat": "personagens",
+    "icon": "💭",
+    "diff": "facil",
+    "explanation": "José interpretou os sonhos do faraó sobre 7 vacas gordas e 7 magras (Gênesis 41)."
+  },
+  {
+    "id": 11,
+    "q": "Qual foi o primeiro milagre de Jesus?",
+    "a": [
+      "Curar um cego",
+      "Ressuscitar Lázaro",
+      "Transformar água em vinho",
+      "Andar sobre as águas"
+    ],
+    "correct": 2,
+    "cat": "milagres",
+    "icon": "🍷",
+    "diff": "facil",
+    "explanation": "Em Caná da Galileia, Jesus transformou água em vinho (João 2:1-11)."
+  },
+  {
+    "id": 12,
+    "q": "Quantos pães Jesus usou para alimentar 5000 pessoas?",
+    "a": [
+      "2",
+      "3",
+      "5",
+      "7"
+    ],
+    "correct": 2,
+    "cat": "milagres",
+    "icon": "🍞",
+    "diff": "facil",
+    "explanation": "Jesus usou 5 pães e 2 peixes para alimentar mais de 5000 pessoas (João 6:9-11)."
+  },
+  {
+    "id": 13,
+    "q": "Quem foi o rei mais sábio de Israel?",
+    "a": [
+      "Davi",
+      "Saul",
+      "Salomão",
+      "Roboão"
+    ],
+    "correct": 2,
+    "cat": "personagens",
+    "icon": "👑",
+    "diff": "facil",
+    "explanation": "Salomão pediu sabedoria a Deus e foi o rei mais sábio de Israel (1 Reis 3:12)."
+  },
+  {
+    "id": 14,
+    "q": "Qual discípulo andou sobre as águas com Jesus?",
+    "a": [
+      "João",
+      "Tiago",
+      "Paulo",
+      "Pedro"
+    ],
+    "correct": 3,
+    "cat": "milagres",
+    "icon": "🌊",
+    "diff": "medio",
+    "explanation": "Pedro caminhou sobre as águas até começar a duvidar (Mateus 14:29-30)."
+  },
+  {
+    "id": 15,
+    "q": "Qual apóstolo era médico?",
+    "a": [
+      "Lucas",
+      "João",
+      "Marcos",
+      "Tiago"
+    ],
+    "correct": 0,
+    "cat": "nt",
+    "icon": "⚕️",
+    "diff": "medio",
+    "explanation": "Lucas era médico e escreveu o Evangelho de Lucas e os Atos dos Apóstolos."
+  },
+  {
+    "id": 16,
+    "q": "Qual foi o nome do anjo que anunciou o nascimento de Jesus a Maria?",
+    "a": [
+      "Miguel",
+      "Rafael",
+      "Gabriel",
+      "Uriel"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "icon": "👼",
+    "diff": "facil",
+    "explanation": "O anjo Gabriel foi enviado por Deus a Maria (Lucas 1:26-27)."
+  },
+  {
+    "id": 17,
+    "q": "Qual é a profissão de Mateus antes de seguir Jesus?",
+    "a": [
+      "Pescador",
+      "Cobrador de impostos",
+      "Carpinteiro",
+      "Médico"
+    ],
+    "correct": 1,
+    "cat": "nt",
+    "icon": "💰",
+    "diff": "medio",
+    "explanation": "Mateus (Levi) era publicano, cobrador de impostos (Mateus 9:9)."
+  },
+  {
+    "id": 18,
+    "q": "Quantas tribos tinha Israel?",
+    "a": [
+      "10",
+      "12",
+      "14",
+      "16"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "icon": "🇮🇱",
+    "diff": "medio",
+    "explanation": "Israel tinha 12 tribos, descendentes dos 12 filhos de Jacó."
+  },
+  {
+    "id": 19,
+    "q": "Qual profeta foi engolido por um grande peixe?",
+    "a": [
+      "Jonas",
+      "Amós",
+      "Oséias",
+      "Joel"
+    ],
+    "correct": 0,
+    "cat": "personagens",
+    "icon": "🐋",
+    "diff": "facil",
+    "explanation": "Jonas ficou 3 dias no ventre de um grande peixe (Jonas 1:17)."
+  },
+  {
+    "id": 20,
+    "q": "Qual dos discípulos traiu Jesus por 30 moedas de prata?",
+    "a": [
+      "Tomé",
+      "Bartolomeu",
+      "Judas Iscariotes",
+      "Simão"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "icon": "🪙",
+    "diff": "facil",
+    "explanation": "Judas Iscariotes entregou Jesus por 30 moedas de prata (Mateus 26:15)."
+  },
+  {
+    "id": 21,
+    "q": "Quantos dias Jesus ficou no deserto sendo tentado?",
+    "a": [
+      "20",
+      "30",
+      "40",
+      "50"
+    ],
+    "correct": 2,
+    "cat": "nt",
+    "icon": "🏜️",
+    "diff": "facil",
+    "explanation": "Jesus passou 40 dias e 40 noites no deserto, sendo tentado pelo diabo (Mateus 4:2)."
+  },
+  {
+    "id": 22,
+    "q": "Quantos salmos tem o livro dos Salmos?",
+    "a": [
+      "100",
+      "120",
+      "150",
+      "200"
+    ],
+    "correct": 2,
+    "cat": "ot",
+    "icon": "🎵",
+    "diff": "medio",
+    "explanation": "O livro dos Salmos possui 150 salmos, muitos atribuídos ao rei Davi."
+  },
+  {
+    "id": 23,
+    "q": "Qual animal falou com Balaão?",
+    "a": [
+      "Leão",
+      "Jumento",
+      "Serpente",
+      "Corvo"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "icon": "🐴",
+    "diff": "medio",
+    "explanation": "O jumento de Balaão falou por milagre de Deus (Números 22:28)."
+  },
+  {
+    "id": 24,
+    "q": "Onde Jesus foi morto?",
+    "a": [
+      "Getsêmani",
+      "Gólgota",
+      "Betânia",
+      "Jericó"
+    ],
+    "correct": 1,
+    "cat": "nt",
+    "diff": "medio",
+    "explanation": "Jesus foi morto no Gólgota, que significa 'Lugar da Caveira' (João 19:17)."
+  },
+  {
+    "id": 25,
+    "q": "Qual é o versículo mais curto da Bíblia?",
+    "a": [
+      "João 3:16",
+      "João 11:35",
+      "Salmos 23:1",
+      "Filipenses 4:4"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "icon": "📝",
+    "diff": "dificil",
+    "explanation": "'Jesus chorou' (João 11:35) é o versículo mais curto da Bíblia em português."
+  },
+  {
+    "id": 26,
+    "q": "Quem construiu o templo de Jerusalém?",
+    "a": [
+      "Davi",
+      "Salomão",
+      "Josafá",
+      "Ezequias"
+    ],
+    "correct": 1,
+    "cat": "personagens",
+    "icon": "🏛️",
+    "diff": "medio",
+    "explanation": "Salomão construiu o primeiro Templo de Jerusalém (1 Reis 6)."
+  },
+  {
+    "id": 27,
+    "q": "Quantos anos Noé tinha quando entrou na arca?",
+    "a": [
+      "300",
+      "500",
+      "600",
+      "700"
+    ],
+    "correct": 2,
+    "cat": "ot",
+    "icon": "👴",
+    "diff": "dificil",
+    "explanation": "Noé tinha 600 anos quando as águas do dilúvio vieram sobre a terra (Gênesis 7:6)."
+  },
+  {
+    "id": 28,
+    "q": "Qual era o nome hebraico de Daniel em Babilônia?",
+    "a": [
+      "Beltessazar",
+      "Sadraque",
+      "Mesaque",
+      "Abede-Nego"
+    ],
+    "correct": 0,
+    "cat": "personagens",
+    "icon": "🦁",
+    "diff": "dificil",
+    "explanation": "Daniel recebeu o nome babilônico de Beltessazar (Daniel 1:7)."
+  },
+  {
+    "id": 29,
+    "q": "Em qual monte Elias desafiou os profetas de Baal?",
+    "a": [
+      "Sinai",
+      "Sião",
+      "Carmelo",
+      "Nebo"
+    ],
+    "correct": 2,
+    "cat": "ot",
+    "icon": "🔥",
+    "diff": "dificil",
+    "explanation": "O desafio aconteceu no Monte Carmelo, onde fogo do céu consumiu o sacrifício (1 Reis 18)."
+  },
+  {
+    "id": 30,
+    "q": "Qual era o nome da esposa de Abraão?",
+    "a": [
+      "Rebeca",
+      "Sara",
+      "Raquel",
+      "Lia"
+    ],
+    "correct": 1,
+    "cat": "personagens",
+    "icon": "👩",
+    "diff": "facil",
+    "explanation": "Sara foi a esposa de Abraão e mãe de Isaque (Gênesis 17:15)."
+  }
+]
