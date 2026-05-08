@@ -27,6 +27,16 @@
 <meta name="twitter:title" content="Ovelha Inteligente – Quiz Bíblico Multiplayer" />
 <meta name="twitter:description" content="Quiz Bíblico Multiplayer em tempo real. Joga com amigos, responde a perguntas sobre a Bíblia e descobre quem sabe mais!" />
 
+<!-- ── PWA: Manifest + Theme ── -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- Apple / iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ovelha Quiz">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
 <!-- ── Schema.org (dados estruturados para o Google) ── -->
 <script type="application/ld+json">
 {
@@ -89,7 +99,6 @@ body {
   animation: bounce 2.2s ease-in-out infinite;
 }
 @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-.subtitle { font-size: .95rem; color: #fff; opacity: .9; text-align: center; margin: 6px 0 22px; text-shadow: 1px 1px 3px rgba(0,0,0,.3); }
 
 /* ── SHEEP SVG ── */
 .sheep-wrap { animation: sw 1.6s ease-in-out infinite; }
@@ -146,9 +155,70 @@ body {
 .qbtn:active { transform:translateY(2px); box-shadow:none; }
 .qdsp { flex:1; text-align:center; font-family:'Fredoka One',cursive; font-size:1.7rem; color:var(--pink); background:#f9f9f9; border:2px solid #eee; border-radius:10px; padding:7px; }
 
-/* ── BACK ── */
-.back { display:inline-flex; align-items:center; gap:5px; color:#fff; font-weight:800; font-size:.9rem; cursor:pointer; opacity:.85; margin-bottom:12px; align-self:flex-start; }
-.back:hover { opacity:1; }
+/* ── BACK BUTTON — botão circular com contraste alto ── */
+.back {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  background: rgba(255,255,255,.18);
+  border: 2px solid rgba(255,255,255,.55);
+  color: #fff; font-family: 'Fredoka One', cursive; font-size: .95rem;
+  cursor: pointer; align-self: flex-start;
+  padding: 8px 18px 8px 12px;
+  border-radius: 50px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.3);
+  backdrop-filter: blur(6px);
+  transition: all .15s cubic-bezier(.34,1.4,.64,1);
+  text-decoration: none; user-select: none;
+}
+.back::before {
+  content: '';
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  font-size: 1.1rem; line-height: 1;
+  /* seta desenhada com border */
+  border-left: 3px solid #fff;
+  border-bottom: 3px solid #fff;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+.back:hover {
+  background: rgba(255,255,255,.3);
+  border-color: rgba(255,255,255,.85);
+  transform: translateX(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.4);
+}
+.back:active {
+  transform: translateX(0) scale(.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2), inset 0 2px 6px rgba(0,0,0,.2);
+  background: rgba(0,0,0,.15);
+}
+
+/* ── MULTIPLAYER BADGE ── */
+.subtitle {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: 'Fredoka One', cursive; font-size: .95rem;
+  color: #fff; text-align: center;
+  margin: 4px 0 22px;
+  padding: 7px 20px;
+  border-radius: 50px;
+  background: linear-gradient(90deg, rgba(255,107,180,.35), rgba(138,43,226,.35));
+  border: 1.5px solid rgba(255,150,220,.55);
+  box-shadow: 0 0 18px rgba(255,107,180,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  backdrop-filter: blur(4px);
+  animation: badgePulse 2.6s ease-in-out infinite;
+  letter-spacing: .03em;
+}
+.subtitle::before { content: '🔴'; font-size: .65rem; animation: liveDot 1.2s ease-in-out infinite; }
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(255,107,180,.3), inset 0 1px 0 rgba(255,255,255,.15); }
+  50%       { box-shadow: 0 0 28px rgba(255,107,180,.6), 0 0 48px rgba(138,43,226,.25), inset 0 1px 0 rgba(255,255,255,.2); }
+}
+@keyframes liveDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
 
 /* ── PIN DISPLAY ── */
 .pin-box {
@@ -269,9 +339,21 @@ body {
 .elim-ov { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(180,0,0,.85); z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; display:none; }
 .elim-ov.show { display:flex; }
 
-/* ── TOAST ── */
-.toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(100px); background:rgba(0,0,0,.85); color:#fff; padding:10px 22px; border-radius:50px; font-weight:700; font-size:.9rem; z-index:400; transition:transform .4s; white-space:nowrap; }
-.toast.show { transform:translateX(-50%) translateY(0); }
+/* ── TOAST — aparece no topo, auto-hide em 3s ── */
+.toast {
+  position: fixed; top: 18px; left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: rgba(20,20,40,.93); color: #fff;
+  padding: 11px 24px; border-radius: 50px;
+  font-weight: 700; font-size: .92rem; z-index: 1000;
+  transition: transform .35s cubic-bezier(.34,1.3,.64,1);
+  white-space: nowrap; max-width: 90vw; text-align: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  border: 1.5px solid rgba(255,215,0,.3);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.toast-error { border-color: rgba(231,76,60,.6); background: rgba(120,10,10,.93); }
+.toast.toast-ok    { border-color: rgba(46,204,113,.6); }
 
 /* ── HOST LIVE PANEL ── */
 .host-panel { width:100%; max-width:420px; }
@@ -359,30 +441,137 @@ body {
 .footer-btn:hover, .footer-btn.active { color: var(--gold); background: rgba(255,215,0,.1); }
 .footer-btn .fbi { font-size: 1.3rem; line-height: 1; }
 
-/* ── MODAL BASE (ALTERAÇÃO 2) ── */
+/* ── MODAL BASE — centrado vertical e horizontalmente ── */
 .modal-ov {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,.75); z-index: 200;
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity .3s;
+  background: rgba(0,0,0,.72); z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  opacity: 0; pointer-events: none; transition: opacity .28s;
 }
 .modal-ov.show { opacity: 1; pointer-events: all; }
 .modal-sheet {
-  background: #fff; border-radius: 28px 28px 0 0; padding: 20px 18px 80px;
-  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
-  transform: translateY(100%); transition: transform .35s cubic-bezier(.34,1.1,.64,1);
+  background: #fff; border-radius: 28px; padding: 22px 20px 26px;
+  width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+  transform: scale(.92) translateY(20px);
+  transition: transform .32s cubic-bezier(.34,1.15,.64,1);
+  position: relative;
 }
-.modal-ov.show .modal-sheet { transform: translateY(0); }
-.modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
-.modal-title { font-family:'Fredoka One',cursive; font-size:1.4rem; color:var(--dark); margin-bottom:14px; text-align:center; }
+.modal-ov.show .modal-sheet { transform: scale(1) translateY(0); }
+.modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 14px; }
+.modal-title { font-family:'Fredoka One',cursive; font-size:1.4rem; color:var(--dark); margin-bottom:14px; text-align:center; padding-right: 32px; }
+
+/* Botão X para fechar modal */
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #f0f0f0; border: none; cursor: pointer;
+  font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  color: #555; transition: all .15s; line-height: 1;
+}
+.modal-close:hover { background: #e74c3c; color: #fff; }
+
+/* ── GAME MENU (engrenagem flutuante) ── */
+.game-menu-btn {
+  position: fixed; bottom: 70px; right: 14px; z-index: 80;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(26,26,46,.88); border: 2px solid rgba(255,215,0,.5);
+  color: #fff; font-size: 1.3rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px); transition: all .2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,.35);
+}
+.game-menu-btn:hover { transform: rotate(30deg); border-color: var(--gold); }
+.game-menu-btn.hidden { display: none; }
+
+/* Popup do game menu */
+.game-menu-popup {
+  position: fixed; bottom: 122px; right: 14px; z-index: 80;
+  background: rgba(26,26,46,.96); border-radius: 18px;
+  border: 2px solid rgba(255,215,0,.4);
+  padding: 10px; display: flex; flex-direction: column; gap: 7px;
+  min-width: 170px; backdrop-filter: blur(8px);
+  transform-origin: bottom right;
+  transform: scale(0); opacity: 0;
+  transition: transform .22s cubic-bezier(.34,1.4,.64,1), opacity .18s;
+  pointer-events: none;
+}
+.game-menu-popup.open { transform: scale(1); opacity: 1; pointer-events: all; }
+.gm-btn {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.08); border: none;
+  border-radius: 12px; padding: 10px 14px;
+  color: #fff; font-family: 'Nunito', sans-serif;
+  font-size: .9rem; font-weight: 800; cursor: pointer;
+  transition: background .15s; text-align: left;
+}
+.gm-btn:hover { background: rgba(255,255,255,.18); }
+.gm-btn.danger { color: #ff7675; }
+.gm-btn .gm-icon { font-size: 1.2rem; }
+
+/* ── PAUSE OVERLAY ── */
+.pause-ov {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.82); z-index: 450;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+  backdrop-filter: blur(4px);
+}
+.pause-ov.show { opacity: 1; pointer-events: all; }
+.pause-title { font-family:'Fredoka One',cursive; font-size:3rem; color: var(--gold); margin-bottom: 12px; text-shadow: 0 0 30px rgba(255,215,0,.5); }
+.pause-sub { color: rgba(255,255,255,.75); font-size: 1rem; font-weight: 700; }
 
 @media(max-height:680px) {
   .qcard { min-height:100px; padding:13px; }
   .ans-btn { padding:9px 12px; }
 }
+
+/* ── PWA INSTALL BANNER ── */
+#pwaInstallBanner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: linear-gradient(90deg, #1a1a2e, #16213e);
+  border-bottom: 2px solid var(--gold);
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  transform: translateY(-100%);
+  transition: transform .4s cubic-bezier(.34,1.15,.64,1);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+#pwaInstallBanner.show { transform: translateY(0); }
+.pwa-icon { font-size: 1.6rem; flex-shrink: 0; }
+.pwa-text { flex: 1; }
+.pwa-text strong { display: block; color: var(--gold); font-family: 'Fredoka One', cursive; font-size: .95rem; }
+.pwa-text span   { color: rgba(255,255,255,.7); font-size: .75rem; }
+.pwa-install-btn {
+  background: linear-gradient(180deg, #ffd700, #ffa500);
+  color: #3a2000; border: none; border-radius: 50px;
+  font-family: 'Fredoka One', cursive; font-size: .85rem;
+  padding: 7px 16px; cursor: pointer; flex-shrink: 0;
+  box-shadow: 0 3px 0 #cc8400; transition: all .14s;
+}
+.pwa-install-btn:active { transform: translateY(2px); box-shadow: none; }
+.pwa-dismiss-btn {
+  background: none; border: none; color: rgba(255,255,255,.45);
+  font-size: 1.2rem; cursor: pointer; padding: 4px 6px;
+  flex-shrink: 0; line-height: 1;
+}
+.pwa-dismiss-btn:hover { color: rgba(255,255,255,.8); }
 </style>
 </head>
 <body>
+<!-- ══════════════ PWA INSTALL BANNER ══════════════ -->
+<!-- Aparece automaticamente quando o browser dispara beforeinstallprompt.
+     Só visível se a app ainda não estiver instalada. -->
+<div id="pwaInstallBanner" role="banner" aria-label="Instalar aplicação">
+  <span class="pwa-icon">🐑</span>
+  <div class="pwa-text">
+    <strong>Instalar Ovelha Inteligente</strong>
+    <span>Joga offline e acede mais rápido!</span>
+  </div>
+  <button class="pwa-install-btn" id="pwaInstallBtn">⬇️ Instalar</button>
+  <button class="pwa-dismiss-btn" id="pwaDismissBtn" title="Fechar">✕</button>
+</div>
+
 <!-- bg -->
 <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
 
@@ -416,9 +605,10 @@ body {
   </button>
 </div>
 
-<!-- ══════════════ MODAL: ADMIN LOGIN (ALTERAÇÃO 2) ══════════════ -->
+<!-- ══════════════ MODAL: ADMIN LOGIN ══════════════ -->
 <div class="modal-ov" id="modal-admin" onclick="closeModalOv(event,this)">
   <div class="modal-sheet">
+    <button class="modal-close" onclick="document.getElementById('modal-admin').classList.remove('show')" title="Fechar">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-title">⚙️ Área Admin</div>
     <label class="lbl">🔐 Senha Admin</label>
@@ -427,9 +617,10 @@ body {
   </div>
 </div>
 
-<!-- ══════════════ MODAL: HISTÓRICO (ALTERAÇÃO 2) ══════════════ -->
+<!-- ══════════════ MODAL: HISTÓRICO ══════════════ -->
 <div class="modal-ov" id="modal-history" onclick="closeModalOv(event,this)">
   <div class="modal-sheet">
+    <button class="modal-close" onclick="document.getElementById('modal-history').classList.remove('show')" title="Fechar">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-title">📋 Histórico de Partidas</div>
     <div id="historyList"></div>
@@ -437,9 +628,10 @@ body {
   </div>
 </div>
 
-<!-- ══════════════ MODAL: SOBRE (ALTERAÇÃO 2) ══════════════ -->
+<!-- ══════════════ MODAL: SOBRE ══════════════ -->
 <div class="modal-ov" id="modal-about" onclick="closeModalOv(event,this)">
   <div class="modal-sheet">
+    <button class="modal-close" onclick="document.getElementById('modal-about').classList.remove('show')" title="Fechar">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-title">🐑 Ovelha Inteligente</div>
     <div style="text-align:center;margin-bottom:16px">
@@ -460,9 +652,10 @@ body {
   </div>
 </div>
 
-<!-- ══════════════ MODAL: SUGERIR PERGUNTA (ALTERAÇÃO 2) ══════════════ -->
+<!-- ══════════════ MODAL: SUGERIR PERGUNTA ══════════════ -->
 <div class="modal-ov" id="modal-suggest" onclick="closeModalOv(event,this)">
   <div class="modal-sheet">
+    <button class="modal-close" onclick="document.getElementById('modal-suggest').classList.remove('show')" title="Fechar">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-title">💡 Sugerir Pergunta</div>
     <div id="suggestForm">
@@ -511,31 +704,112 @@ body {
 
 <!-- ══════════════ HOME ══════════════ -->
 <div class="screen active" id="s-home">
-  <div class="sheep-wrap" style="width:130px;margin-bottom:4px">
-    <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="100" cy="100" rx="65" ry="52" fill="#f0f0f0"/>
-      <circle cx="68" cy="78" r="28" fill="white"/><circle cx="100" cy="68" r="30" fill="white"/>
-      <circle cx="132" cy="78" r="28" fill="white"/><circle cx="80" cy="92" r="24" fill="white"/>
-      <circle cx="118" cy="92" r="24" fill="white"/><circle cx="100" cy="96" r="26" fill="white"/>
-      <ellipse cx="100" cy="58" rx="28" ry="26" fill="#f5deb3"/>
-      <circle cx="90" cy="52" r="7" fill="white"/><circle cx="90" cy="52" r="4" fill="#333"/>
-      <circle cx="110" cy="52" r="7" fill="white"/><circle cx="110" cy="52" r="4" fill="#333"/>
-      <circle cx="91" cy="51" r="1.5" fill="white"/><circle cx="111" cy="51" r="1.5" fill="white"/>
-      <ellipse cx="100" cy="65" rx="9" ry="7" fill="#e8a87c"/>
-      <circle cx="96" cy="65" r="2.5" fill="#c07050"/><circle cx="104" cy="65" r="2.5" fill="#c07050"/>
-      <path d="M94 70 Q100 76 106 70" fill="none" stroke="#c07050" stroke-width="2" stroke-linecap="round"/>
-      <ellipse cx="74" cy="48" rx="10" ry="14" fill="#f5deb3" transform="rotate(-20,74,48)"/>
-      <ellipse cx="126" cy="48" rx="10" ry="14" fill="#f5deb3" transform="rotate(20,126,48)"/>
-      <rect x="74" y="140" width="14" height="34" rx="7" fill="#f5deb3"/>
-      <rect x="94" y="142" width="14" height="32" rx="7" fill="#f5deb3"/>
-      <rect x="112" y="142" width="14" height="32" rx="7" fill="#f5deb3"/>
-      <rect x="74" y="166" width="14" height="10" rx="4" fill="#555"/>
-      <rect x="94" y="166" width="14" height="10" rx="4" fill="#555"/>
-      <rect x="112" y="166" width="14" height="10" rx="4" fill="#555"/>
+  <div class="sheep-wrap" style="width:155px;margin-bottom:2px;filter:drop-shadow(0 18px 22px rgba(0,0,0,.38)) drop-shadow(0 4px 6px rgba(0,0,0,.22))">
+    <svg viewBox="0 0 200 195" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Lã: gradiente radial para simular volume esférico -->
+        <radialGradient id="woolMain" cx="42%" cy="36%" r="58%">
+          <stop offset="0%"   stop-color="#ffffff"/>
+          <stop offset="55%"  stop-color="#e8e8e8"/>
+          <stop offset="100%" stop-color="#c8c8c8"/>
+        </radialGradient>
+        <radialGradient id="woolBall1" cx="38%" cy="32%" r="55%">
+          <stop offset="0%"   stop-color="#ffffff"/>
+          <stop offset="60%"  stop-color="#ebebeb"/>
+          <stop offset="100%" stop-color="#d0d0d0"/>
+        </radialGradient>
+        <radialGradient id="woolBall2" cx="45%" cy="30%" r="52%">
+          <stop offset="0%"   stop-color="#ffffff"/>
+          <stop offset="65%"  stop-color="#e5e5e5"/>
+          <stop offset="100%" stop-color="#c5c5c5"/>
+        </radialGradient>
+        <!-- Cara: gradiente cálido -->
+        <radialGradient id="faceGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%"   stop-color="#fdebd0"/>
+          <stop offset="70%"  stop-color="#f5cba7"/>
+          <stop offset="100%" stop-color="#e59866"/>
+        </radialGradient>
+        <!-- Patas: gradiente vertical -->
+        <linearGradient id="legGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"   stop-color="#fdebd0"/>
+          <stop offset="100%" stop-color="#e8c49a"/>
+        </linearGradient>
+        <!-- Sombra projetada no chão (elipse semi-transparente) -->
+        <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="rgba(0,0,0,.28)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Sombra no chão -->
+      <ellipse cx="100" cy="188" rx="52" ry="9" fill="url(#shadowGrad)"/>
+
+      <!-- Corpo principal da lã (ellipse traseira) -->
+      <ellipse cx="100" cy="103" rx="62" ry="50" fill="url(#woolMain)"/>
+      <!-- Reflexo especular no topo do corpo -->
+      <ellipse cx="88" cy="80" rx="22" ry="12" fill="rgba(255,255,255,.45)" transform="rotate(-18,88,80)"/>
+
+      <!-- Bolas de lã individuais com gradiente volumétrico -->
+      <circle cx="68"  cy="80"  r="27" fill="url(#woolBall1)"/>
+      <circle cx="100" cy="70"  r="29" fill="url(#woolBall2)"/>
+      <circle cx="132" cy="80"  r="27" fill="url(#woolBall1)"/>
+      <circle cx="80"  cy="95"  r="23" fill="url(#woolBall2)"/>
+      <circle cx="118" cy="95"  r="23" fill="url(#woolBall1)"/>
+      <circle cx="100" cy="99"  r="25" fill="url(#woolMain)"/>
+
+      <!-- Reflexos especulares nas bolas de lã -->
+      <circle cx="62"  cy="72"  r="7"  fill="rgba(255,255,255,.55)"/>
+      <circle cx="94"  cy="62"  r="8"  fill="rgba(255,255,255,.55)"/>
+      <circle cx="126" cy="72"  r="7"  fill="rgba(255,255,255,.5)"/>
+
+      <!-- Sombra de contato entre corpo e patas -->
+      <ellipse cx="100" cy="148" rx="42" ry="7" fill="rgba(0,0,0,.12)"/>
+
+      <!-- Cara com gradiente -->
+      <ellipse cx="100" cy="59" rx="27" ry="25" fill="url(#faceGrad)"/>
+      <!-- Maçã do rosto -->
+      <circle cx="88" cy="62" r="5" fill="rgba(230,120,80,.35)"/>
+      <circle cx="112" cy="62" r="5" fill="rgba(230,120,80,.35)"/>
+
+      <!-- Olhos: esclera + íris + pupila + reflexo -->
+      <circle cx="90"  cy="52" r="7.5" fill="white"/>
+      <circle cx="110" cy="52" r="7.5" fill="white"/>
+      <circle cx="90"  cy="53" r="4.5" fill="#2c2c54"/>
+      <circle cx="110" cy="53" r="4.5" fill="#2c2c54"/>
+      <circle cx="91"  cy="51" r="1.8" fill="white"/>
+      <circle cx="111" cy="51" r="1.8" fill="white"/>
+      <!-- Cílios suaves -->
+      <path d="M84 46 Q87 43 90 45" fill="none" stroke="#6b4c2a" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M110 45 Q113 43 116 46" fill="none" stroke="#6b4c2a" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- Focinho -->
+      <ellipse cx="100" cy="66" rx="8.5" ry="6.5" fill="#e8a87c"/>
+      <circle cx="96"  cy="66" r="2.5" fill="#c07050"/>
+      <circle cx="104" cy="66" r="2.5" fill="#c07050"/>
+      <!-- Sorriso -->
+      <path d="M94 71 Q100 78 106 71" fill="none" stroke="#c07050" stroke-width="2.2" stroke-linecap="round"/>
+
+      <!-- Orelhas com gradiente e bordo mais escuro -->
+      <ellipse cx="74" cy="48" rx="10" ry="14" fill="#f5cba7" transform="rotate(-20,74,48)"/>
+      <ellipse cx="76" cy="48" rx="6"  ry="10" fill="#e8a87c" transform="rotate(-20,76,48)"/>
+      <ellipse cx="126" cy="48" rx="10" ry="14" fill="#f5cba7" transform="rotate(20,126,48)"/>
+      <ellipse cx="124" cy="48" rx="6"  ry="10" fill="#e8a87c" transform="rotate(20,124,48)"/>
+
+      <!-- Patas com gradiente e cascos mais detalhados -->
+      <rect x="75"  y="142" width="14" height="33" rx="7" fill="url(#legGrad)"/>
+      <rect x="95"  y="144" width="14" height="31" rx="7" fill="url(#legGrad)"/>
+      <rect x="113" y="144" width="14" height="31" rx="7" fill="url(#legGrad)"/>
+      <!-- Cascos com relevo -->
+      <rect x="75"  y="167" width="14" height="10" rx="5" fill="#4a4a6a"/>
+      <rect x="75"  y="167" width="14" height="4"  rx="3" fill="#5c5c80"/>
+      <rect x="95"  y="167" width="14" height="10" rx="5" fill="#4a4a6a"/>
+      <rect x="95"  y="167" width="14" height="4"  rx="3" fill="#5c5c80"/>
+      <rect x="113" y="167" width="14" height="10" rx="5" fill="#4a4a6a"/>
+      <rect x="113" y="167" width="14" height="4"  rx="3" fill="#5c5c80"/>
     </svg>
   </div>
   <div class="title">Ovelha Inteligente</div>
-  <div class="subtitle"> Multiplayer em Tempo Real</div>
+  <div class="subtitle">Multiplayer em Tempo Real</div>
   <button class="btn btn-pink" onclick="go('s-host-setup')">🐑 Criar Jogo (Anfitrião)</button>
   <button class="btn btn-green" onclick="go('s-join')">🎮 Ingressar num Jogo</button>
   <button class="btn btn-gold" onclick="go('s-ranking')">🏆 Ranking Global</button>
@@ -543,7 +817,7 @@ body {
 
 <!-- ══════════════ HOST SETUP ══════════════ -->
 <div class="screen" id="s-host-setup">
-  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <span class="back" onclick="go('s-home')">Voltar</span>
   <div class="title" style="font-size:2rem;margin-bottom:14px">🐑 Criar Jogo</div>
   <div class="card">
     <label class="lbl">👤 Seu Nome (Anfitrião)</label>
@@ -599,7 +873,7 @@ body {
 
 <!-- ══════════════ JOIN ══════════════ -->
 <div class="screen" id="s-join">
-  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <span class="back" onclick="go('s-home')">Voltar</span>
   <div class="title" style="font-size:2rem;margin-bottom:14px">🎮 Ingressar</div>
   <div class="card">
     <label class="lbl">📌 PIN do Jogo</label>
@@ -628,6 +902,9 @@ body {
       <div class="pin-number" id="waitPin">----</div>
     </div>
     <div id="waitPlayers" style="color:#fff;font-weight:700;margin-top:10px;font-size:.9rem"></div>
+    <button onclick="confirmLeave()" style="margin-top:18px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);color:#fff;border-radius:50px;padding:10px 28px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(231,76,60,.5)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">
+      🚪 Sair da Sala
+    </button>
   </div>
 </div>
 
@@ -727,6 +1004,9 @@ body {
   <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar</div>
   <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:220px;overflow-y:auto;margin-bottom:10px" id="playerRevealLb"></div>
   <div style="color:rgba(255,255,255,.7);font-size:.85rem">Aguardando próxima pergunta...</div>
+  <button onclick="confirmLeave()" style="margin-top:14px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:50px;padding:8px 22px;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">
+    🚪 Sair da partida
+  </button>
 </div>
 
 <!-- ══════════════ GAME OVER (HOST) ══════════════ -->
@@ -752,14 +1032,14 @@ body {
 
 <!-- ══════════════ RANKING ══════════════ -->
 <div class="screen" id="s-ranking">
-  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <span class="back" onclick="go('s-home')">Voltar</span>
   <div class="title" style="font-size:2rem;margin-bottom:14px">🏆 Ranking</div>
   <div id="rankList" style="width:100%;max-width:370px;background:rgba(255,255,255,.93);border-radius:24px;padding:18px;border:3px solid var(--gold);max-height:60vh;overflow-y:auto"></div>
 </div>
 
 <!-- ══════════════ ADMIN LOGIN ══════════════ -->
 <div class="screen" id="s-admin-login">
-  <span class="back" onclick="go('s-home')">← Voltar</span>
+  <span class="back" onclick="go('s-home')">Voltar</span>
   <div class="title" style="font-size:2rem;margin-bottom:14px">⚙️ Admin</div>
   <div class="card">
     <label class="lbl">🔐 Senha Admin</label>
@@ -770,7 +1050,7 @@ body {
 
 <!-- ══════════════ ADMIN PANEL ══════════════ -->
 <div class="screen" id="s-admin">
-  <span class="back" onclick="go('s-home')">← Sair</span>
+  <span class="back" onclick="go('s-home')">Sair</span>
   <div class="title" style="font-size:1.6rem;margin-bottom:10px">⚙️ Painel Admin</div>
 
   <!-- Stats -->
@@ -855,6 +1135,7 @@ body {
 <!-- ══════════════ MODAL: EDITAR PERGUNTA (ADMIN) ══════════════ -->
 <div class="modal-ov" id="modal-edit-q" onclick="closeModalOv(event,this)" style="z-index:200">
   <div class="modal-sheet" style="max-height:90vh;overflow-y:auto">
+    <button class="modal-close" onclick="document.getElementById('modal-edit-q').classList.remove('show')" title="Fechar">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-title">✏️ Editar Pergunta</div>
     <input type="hidden" id="eq-index">
@@ -886,9 +1167,37 @@ body {
     <label class="lbl">💡 Explicação (opcional)</label>
     <input class="inp" id="eq-expl" placeholder="Explicação da resposta correta">
     <button class="btn btn-green" onclick="adminSaveEdit()" style="margin:4px 0">💾 Guardar Alterações</button>
-    <button class="btn btn-red" onclick="document.getElementById('modal-edit-q').classList.remove('show')" style="margin:0;font-size:.9rem;padding:10px">✖ Cancelar</button>
   </div>
 </div>
+
+<!-- ══════════════ PAUSE OVERLAY ══════════════ -->
+<div class="pause-ov" id="pauseOv">
+  <div style="font-size:4rem;margin-bottom:12px">⏸️</div>
+  <div class="pause-title">Jogo Pausado</div>
+  <div class="pause-sub" id="pauseSubtitle">O anfitrião pausou o jogo</div>
+  <div style="margin-top:20px;color:rgba(255,255,255,.5);font-size:.85rem">Aguardando o anfitrião retomar...</div>
+</div>
+
+<!-- ══════════════ GAME MENU ══════════════ -->
+<!-- Engrenagem flutuante — visível durante o jogo (host e player) -->
+<button class="game-menu-btn hidden" id="gameMenuBtn" onclick="toggleGameMenu()" title="Menu do jogo">⚙️</button>
+<div class="game-menu-popup" id="gameMenuPopup">
+  <!-- Pausar — só o host vê -->
+  <button class="gm-btn" id="gmPauseBtn" onclick="hostPauseGame()" style="display:none">
+    <span class="gm-icon">⏸️</span> Pausar Jogo
+  </button>
+  <!-- Retomar — só o host vê, quando pausado -->
+  <button class="gm-btn" id="gmResumeBtn" onclick="hostResumeGame()" style="display:none">
+    <span class="gm-icon">▶️</span> Retomar Jogo
+  </button>
+  <!-- Abandonar — todos veem -->
+  <button class="gm-btn danger" id="gmLeaveBtn" onclick="confirmLeave()">
+    <span class="gm-icon">🚪</span> <span id="gmLeaveLbl">Sair da Sala</span>
+  </button>
+</div>
+
+<!-- Overlay de fundo ao abrir o game menu (fecha ao clicar fora) -->
+<div id="gameMenuBackdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:79" onclick="closeGameMenu()"></div>
 
 <!-- Overlays -->
 <div class="fb-ov" id="fbOv">
@@ -967,6 +1276,10 @@ function go(id) {
   // Inicializar galeria de avatares ao navegar para as telas de setup
   if (id === 's-host-setup') buildAvatarGrid('hostAvatarGrid', 'host');
   if (id === 's-join')       buildAvatarGrid('joinAvatarGrid', 'player');
+
+  // Game menu: visível durante a partida (host e player)
+  const gameScreens = ['s-host-quiz','s-host-reveal','s-quiz','s-player-reveal','s-player-wait'];
+  showGameMenu(gameScreens.includes(id));
 
   // ── Barra de controlo do anfitrião ──────────────────────────────────────
   // Regra: a barra aparece em TODOS os ecrãs do host EXCETO no ecrã final.
@@ -1136,7 +1449,29 @@ function handleMsg(msg) {
       break;
 
     case 'error':
-      showToast('❌ ' + msg.msg);
+      showToast('❌ ' + msg.msg, 'error');
+      break;
+
+    // Jogo pausado pelo anfitrião
+    case 'game_paused':
+      showPauseOverlay(true, msg.pausedBy ? `⏸️ ${msg.pausedBy} pausou o jogo` : 'O anfitrião pausou o jogo');
+      showToast('⏸️ Jogo pausado');
+      break;
+
+    // Jogo retomado
+    case 'game_resumed':
+      showPauseOverlay(false);
+      showToast('▶️ Jogo retomado!', 'ok');
+      break;
+
+    // Host abandonou — todos voltam ao início
+    case 'host_left':
+      showPauseOverlay(false);
+      showGameMenu(false);
+      stopHeartbeat();
+      go('s-home');
+      showToast('⚠️ ' + (msg.msg || 'O anfitrião abandonou a partida.'), 'error');
+      role = null; myPin = null;
       break;
 
     // BOTH: countdown
@@ -1218,13 +1553,8 @@ function handleMsg(msg) {
       setTimeout(() => { document.getElementById('elimOv').classList.add('show'); }, 1500);
       break;
 
-    case 'host_left':
-      showToast('O anfitrião saiu do jogo.');
-      setTimeout(() => go('s-home'), 2000);
-      break;
-
     case 'kicked':
-      showToast('Você foi removido da sala.');
+      showToast('⚠️ Foste removido da sala.', 'error');
       setTimeout(() => go('s-home'), 2000);
       break;
 
@@ -2001,13 +2331,177 @@ function launchConfetti() {
 // TOAST
 // ═══════════════════════════════════════════════════════
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, type = '') {
+  // type: '' | 'error' | 'ok'
   const t = document.getElementById('toast');
   t.textContent = msg;
+  t.className = 'toast' + (type ? ' toast-' + type : '');
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ═══════════════════════════════════════════════════════
+// GAME MENU — engrenagem flutuante durante a partida
+// ═══════════════════════════════════════════════════════
+let gamePaused = false;
+
+function showGameMenu(visible) {
+  const btn = document.getElementById('gameMenuBtn');
+  btn.classList.toggle('hidden', !visible);
+  if (!visible) closeGameMenu();
+  // Configurar botões conforme o role
+  document.getElementById('gmPauseBtn').style.display  = (role === 'host' && !gamePaused) ? '' : 'none';
+  document.getElementById('gmResumeBtn').style.display = (role === 'host' && gamePaused)  ? '' : 'none';
+  document.getElementById('gmLeaveLbl').textContent = role === 'host' ? 'Encerrar Sala' : 'Sair da Partida';
+}
+
+function toggleGameMenu() {
+  const popup = document.getElementById('gameMenuPopup');
+  const backdrop = document.getElementById('gameMenuBackdrop');
+  // Atualizar botões antes de abrir
+  document.getElementById('gmPauseBtn').style.display  = (role === 'host' && !gamePaused) ? '' : 'none';
+  document.getElementById('gmResumeBtn').style.display = (role === 'host' && gamePaused)  ? '' : 'none';
+  document.getElementById('gmLeaveLbl').textContent = role === 'host' ? 'Encerrar Sala' : 'Sair da Partida';
+  const opening = !popup.classList.contains('open');
+  popup.classList.toggle('open', opening);
+  backdrop.style.display = opening ? '' : 'none';
+  playClick();
+}
+
+function closeGameMenu() {
+  document.getElementById('gameMenuPopup').classList.remove('open');
+  document.getElementById('gameMenuBackdrop').style.display = 'none';
+}
+
+// ── Pausar (host only) ────────────────────────────────
+function hostPauseGame() {
+  closeGameMenu();
+  send({ type: 'pause_game' });
+}
+
+// ── Retomar (host only) ───────────────────────────────
+function hostResumeGame() {
+  closeGameMenu();
+  send({ type: 'resume_game' });
+}
+
+// ── Mostrar/esconder pause overlay ───────────────────
+function showPauseOverlay(paused, subtitle) {
+  gamePaused = paused;
+  const ov = document.getElementById('pauseOv');
+  ov.classList.toggle('show', paused);
+  if (subtitle) document.getElementById('pauseSubtitle').textContent = subtitle;
+  // Atualizar botões no menu
+  document.getElementById('gmPauseBtn').style.display  = (role === 'host' && !paused) ? '' : 'none';
+  document.getElementById('gmResumeBtn').style.display = (role === 'host' && paused)  ? '' : 'none';
+}
+
+// ── Confirmar saída ───────────────────────────────────
+function confirmLeave() {
+  closeGameMenu();
+  const msg = role === 'host'
+    ? 'Encerrar a sala? Todos os jogadores serão desconectados.'
+    : 'Sair da partida? Perderás os teus pontos.';
+  if (confirm(msg)) leaveGame();
+}
+
+function leaveGame() {
+  stopHeartbeat();
+  showPauseOverlay(false);
+  showGameMenu(false);
+  if (role === 'host') {
+    send({ type: 'host_abandon' });
+  } else {
+    send({ type: 'leave_game' });
+  }
+  // Reset imediato no cliente
+  if (ws) { try { ws.close(); } catch(e) {} ws = null; wsReady = false; }
+  role = null; myPin = null;
+  go('s-home');
+  showToast(role === 'host' ? '🔴 Sala encerrada.' : '👋 Saíste da partida.');
+}
+
+// ═══════════════════════════════════════════════════════
+// PWA — Service Worker + Install Banner
+// ═══════════════════════════════════════════════════════
+(function initPWA() {
+  // ── 1. Registar Service Worker ────────────────────────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log('🐑 SW registado:', reg.scope);
+          // Verificar updates silenciosamente a cada 30 min
+          setInterval(() => reg.update(), 30 * 60 * 1000);
+        })
+        .catch(err => console.warn('SW falhou:', err));
+    });
+  }
+
+  // ── 2. Banner de instalação ───────────────────────────
+  let deferredPrompt = null;
+  const banner     = document.getElementById('pwaInstallBanner');
+  const installBtn = document.getElementById('pwaInstallBtn');
+  const dismissBtn = document.getElementById('pwaDismissBtn');
+
+  // Não mostrar se o utilizador já dispensou anteriormente
+  const dismissed = localStorage.getItem('pwa_banner_dismissed');
+
+  // O browser dispara este evento antes de mostrar o prompt nativo
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // impedir prompt automático
+    deferredPrompt = e;
+    // Mostrar banner apenas se não foi dispensado
+    if (!dismissed) {
+      setTimeout(() => banner.classList.add('show'), 1500); // pequeno delay para não assustar
+    }
+  });
+
+  // Botão Instalar — aciona o prompt nativo do browser
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    banner.classList.remove('show');
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('PWA install:', outcome);
+    deferredPrompt = null;
+    if (outcome === 'accepted') {
+      showToast('🐑 App instalada com sucesso!', 'ok');
+    }
+  });
+
+  // Botão dispensar — esconder e não mostrar mais nesta sessão
+  dismissBtn.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem('pwa_banner_dismissed', '1');
+  });
+
+  // Quando já está instalada como PWA — esconder banner para sempre
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('show');
+    deferredPrompt = null;
+    console.log('🐑 PWA instalada!');
+  });
+
+  // Detetar se já está a correr em modo standalone (já instalada)
+  if (window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true) {
+    // Já instalada — garantir que o banner nunca aparece
+    localStorage.setItem('pwa_banner_dismissed', '1');
+  }
+
+  // ── 3. Responder ao shortcut ?action= do manifest ────────
+  const params = new URLSearchParams(window.location.search);
+  const action = params.get('action');
+  if (action === 'host') {
+    // Aberto via shortcut "Criar Jogo"
+    window.addEventListener('DOMContentLoaded', () => go('s-host-setup'));
+  } else if (action === 'join') {
+    // Aberto via shortcut "Ingressar"
+    window.addEventListener('DOMContentLoaded', () => go('s-join'));
+  }
+})();
 </script>
 </body>
 </html>
