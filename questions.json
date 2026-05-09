@@ -475,5 +475,20 @@
     "diff": "medio",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778328783853,
+    "q": "Qual era o emprego de Amós?",
+    "a": [
+      "Criador de Gado",
+      "Criador de Ovelhas",
+      "Músico",
+      "Governador"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
