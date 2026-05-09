@@ -520,5 +520,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778331631866,
+    "q": "O que significa o nome bíblico \"Mara\"?",
+    "a": [
+      "\"Amarga\"",
+      "\"Todo poderoso tornou minha vida muito amarga\"",
+      "\"Minha agradabilidade\"",
+      "\"Minha Doçura\""
+    ],
+    "correct": 0,
+    "cat": "personagens",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
