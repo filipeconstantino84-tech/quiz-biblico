@@ -490,5 +490,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778329169844,
+    "q": "Quantas vezes Naamã, chefe do exército sírio, mergulhou no rio Jordão?",
+    "a": [
+      "3",
+      "9",
+      "5",
+      "7"
+    ],
+    "correct": 3,
+    "cat": "ot",
+    "diff": "medio",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
