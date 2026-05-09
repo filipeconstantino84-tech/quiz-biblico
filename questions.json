@@ -460,5 +460,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778328154076,
+    "q": "Em Êxodo 14:19, quem era o anjo do verdadeiro Deus que ia à frente de Israel?",
+    "a": [
+      "Miguel",
+      "Gabriel",
+      "Não se sabe o nome",
+      "Misael"
+    ],
+    "correct": 0,
+    "cat": "ot",
+    "diff": "medio",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
