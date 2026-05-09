@@ -505,5 +505,20 @@
     "diff": "medio",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778331508392,
+    "q": "O nome bíblico Noemi significa?",
+    "a": [
+      "Mara",
+      "\"Minha agradabilidade; minha doçura\"",
+      "Amarga",
+      "\"Todo-poderoso tornou minha vida muito amarga\""
+    ],
+    "correct": 1,
+    "cat": "personagens",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
