@@ -535,20 +535,5 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
-  },
-  {
-    "id": 1778347212281,
-    "q": "Quantos filhos tinha Penina?",
-    "a": [
-      "2",
-      "8",
-      "Não sabemos",
-      "6"
-    ],
-    "correct": 2,
-    "cat": "ot",
-    "diff": "medio",
-    "icon": "📖",
-    "explanation": ""
   }
 ]
