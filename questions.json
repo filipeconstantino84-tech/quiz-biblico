@@ -550,5 +550,20 @@
     "diff": "medio",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778441104558,
+    "q": "Quem era o nome do escravo a quem Pedro cortou-lhe a orelha direita?",
+    "a": [
+      "Tadeu",
+      "André",
+      "Malco",
+      "A Biblia não diz"
+    ],
+    "correct": 2,
+    "cat": "personagens",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
