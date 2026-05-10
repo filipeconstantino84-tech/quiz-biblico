@@ -253,21 +253,6 @@
     "explanation": "Mateus (Levi) era publicano, cobrador de impostos (Mateus 9:9)."
   },
   {
-    "id": 18,
-    "q": "Quantas tribos tinha Israel?",
-    "a": [
-      "10",
-      "12",
-      "14",
-      "16"
-    ],
-    "correct": 1,
-    "cat": "ot",
-    "icon": "🇮🇱",
-    "diff": "medio",
-    "explanation": "Israel tinha 12 tribos, descendentes dos 12 filhos de Jacó."
-  },
-  {
     "id": 19,
     "q": "Qual profeta foi engolido por um grande peixe?",
     "a": [
