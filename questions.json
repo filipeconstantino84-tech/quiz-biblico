@@ -625,5 +625,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778444141633,
+    "q": "Qual foi o homem mencionado apenas uma vez na Bíblia como “mais honrado do que os seus irmãos”, mas cujo nome quase nunca é lembrado?",
+    "a": [
+      "Quenaz",
+      "Jabez",
+      "Abner",
+      "Elioenai"
+    ],
+    "correct": 1,
+    "cat": "ot",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
