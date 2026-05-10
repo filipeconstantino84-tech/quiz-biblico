@@ -565,5 +565,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778441850687,
+    "q": "Nadabe e Abiú morreram quando?",
+    "a": [
+      "Antes do pai morrer",
+      "Quando Jesus nasceu",
+      "A bíblia não diz",
+      "Quando David morreu"
+    ],
+    "correct": 0,
+    "cat": "ot",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
