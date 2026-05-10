@@ -595,5 +595,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778442756410,
+    "q": "Qual foi o profeta que foi enganado por um profeta mais velho e acabou morto por um leão?",
+    "a": [
+      "Geazi",
+      "Urias",
+      "Natã",
+      "O homem de Deus de Judá"
+    ],
+    "correct": 3,
+    "cat": "personagens",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
