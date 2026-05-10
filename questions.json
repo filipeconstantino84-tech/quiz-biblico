@@ -535,5 +535,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778440898359,
+    "q": "Quem era o discípulo a quem Jesus amava",
+    "a": [
+      "Pedro",
+      "Paulo",
+      "Natanael",
+      "João"
+    ],
+    "correct": 3,
+    "cat": "personagens",
+    "diff": "medio",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
