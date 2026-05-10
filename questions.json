@@ -610,5 +610,20 @@
     "diff": "dificil",
     "icon": "📖",
     "explanation": ""
+  },
+  {
+    "id": 1778443725448,
+    "q": "Quem foi o juiz de Israel que tinha 40 filhos e 30 netos que montavam 70 jumentos?",
+    "a": [
+      "Elom",
+      "Ibsã",
+      "Abdom",
+      "Jefté"
+    ],
+    "correct": 2,
+    "cat": "personagens",
+    "diff": "dificil",
+    "icon": "📖",
+    "explanation": ""
   }
 ]
