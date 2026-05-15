@@ -335,9 +335,11 @@ body {
 @keyframes cdpop { 0%{transform:scale(2);opacity:0;} 50%{transform:scale(1.1);} 100%{transform:scale(1);opacity:1;} }
 .cd-txt { color:var(--gold); font-family:'Fredoka One',cursive; font-size:1.4rem; margin-top:10px; }
 
-/* ── ELIMINATED ── */
-.elim-ov { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(180,0,0,.85); z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; display:none; }
-.elim-ov.show { display:flex; }
+/* ── ELIMINATED — [FASE 1] Oculto permanentemente, servidor já não envia 'eliminated' ── */
+.elim-ov { display: none !important; }
+
+/* ── SPIN — usado no spinner de espera do player reveal ── */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ── TOAST — aparece no topo, auto-hide em 3s ── */
 .toast {
@@ -941,7 +943,8 @@ body {
       <div class="sb-name" id="hSbName">Anfitrião</div>
       <div class="sb-pts"><span id="hSbPts">0</span> pts</div>
     </div>
-    <div class="hearts" id="hHearts">
+    <!-- [FASE 1] Corações ocultos — sistema de vidas removido -->
+    <div class="hearts" id="hHearts" style="display:none">
       <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
     </div>
     <div class="streak-badge" id="hStreak"></div>
@@ -979,7 +982,8 @@ body {
       <div class="sb-name" id="pSbName">Jogador</div>
       <div class="sb-pts"><span id="pSbPts">0</span> pts</div>
     </div>
-    <div class="hearts" id="pHearts">
+    <!-- [FASE 1] Corações ocultos — sistema de vidas removido -->
+    <div class="hearts" id="pHearts" style="display:none">
       <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
     </div>
     <div class="streak-badge" id="pStreak"></div>
@@ -988,25 +992,53 @@ body {
 
 <!-- ══════════════ HOST REVEAL ══════════════ -->
 <!-- [ALTERAÇÃO 1] Botão "Próxima" movido para a barra de controlo do host -->
+<!-- [FASE 2+3] Botão "Avançar" adicionado em baixo do placar, full-width -->
 <div class="screen" id="s-host-reveal" style="padding-top:56px">
   <div class="title" style="font-size:1.5rem;margin-bottom:10px" id="revealTitle">Resposta Correta!</div>
   <div class="expl-box" id="revealExpl" style="display:none"></div>
   <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar Atual</div>
-  <div style="width:100%;max-width:390px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:300px;overflow-y:auto;margin-bottom:12px" id="revealLb"></div>
+  <div style="width:100%;max-width:390px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:260px;overflow-y:auto;margin-bottom:14px" id="revealLb"></div>
+  <!-- [FASE 3] Botão full-width em baixo do placar, sempre visível -->
+  <button
+    id="hostAdvanceBtn"
+    onclick="hostNext()"
+    style="
+      width:100%; max-width:390px;
+      padding:18px 20px;
+      background:linear-gradient(180deg,#4cde82,#27ae60);
+      color:#fff; border:none; border-radius:18px;
+      font-family:'Fredoka One',cursive; font-size:1.25rem;
+      cursor:pointer; box-shadow:0 6px 0 #1e8449;
+      transition:all .14s; position:relative; overflow:hidden;
+      letter-spacing:.02em;
+    "
+    onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #1e8449'"
+    onmouseup="this.style.transform='';this.style.boxShadow='0 6px 0 #1e8449'"
+    ontouchstart="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #1e8449'"
+    ontouchend="this.style.transform='';this.style.boxShadow='0 6px 0 #1e8449'"
+  >
+    ➡️ Clique para Avançar...
+  </button>
 </div>
 
 <!-- ══════════════ PLAYER REVEAL ══════════════ -->
+<!-- [FASE 2] Ecrã de revelação para o jogador: resposta + explicação + placar -->
 <div class="screen" id="s-player-reveal">
   <div style="font-size:4rem;margin-bottom:8px" id="prIcon">✅</div>
   <div class="title" style="font-size:1.8rem;margin-bottom:6px" id="prTitle">Correto!</div>
   <div style="color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:10px" id="prPts">+150 pts</div>
   <div class="expl-box" id="prExpl" style="display:none;max-width:370px"></div>
   <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px">🏆 Placar</div>
-  <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:220px;overflow-y:auto;margin-bottom:10px" id="playerRevealLb"></div>
-  <div style="color:rgba(255,255,255,.7);font-size:.85rem">Aguardando próxima pergunta...</div>
-  <button onclick="confirmLeave()" style="margin-top:14px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:50px;padding:8px 22px;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">
-    🚪 Sair da partida
-  </button>
+  <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:14px;max-height:240px;overflow-y:auto;margin-bottom:12px" id="playerRevealLb"></div>
+  <!-- [FASE 2] Mensagem de espera mais clara — sem "vidas a perder" -->
+  <div style="
+    display:flex; align-items:center; gap:8px;
+    color:rgba(255,255,255,.65); font-size:.88rem; font-weight:700;
+    background:rgba(0,0,0,.25); border-radius:50px; padding:8px 18px;
+  ">
+    <span style="animation:spin 1.4s linear infinite;display:inline-block">⏳</span>
+    A aguardar o anfitrião avançar...
+  </div>
 </div>
 
 <!-- ══════════════ GAME OVER (HOST) ══════════════ -->
@@ -1014,7 +1046,8 @@ body {
   <div class="title" style="font-size:2rem;margin-bottom:10px">🏆 Fim do Jogo!</div>
   <div style="width:100%;max-width:390px;background:rgba(255,255,255,.93);border-radius:24px;padding:20px;border:3px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.18);margin-bottom:14px" id="finalLb"></div>
   <button class="btn btn-pink" onclick="go('s-host-setup')">🔄 Novo Jogo</button>
-  <button class="btn btn-gold" onclick="go('s-home')">🏠 Menu</button>
+  <!-- [FASE 2] Texto atualizado conforme spec -->
+  <button class="btn btn-gold" onclick="go('s-home')">🏠 Retornar ao Menu Principal</button>
 </div>
 
 <!-- ══════════════ GAME OVER (PLAYER) ══════════════ -->
@@ -1027,7 +1060,8 @@ body {
     <div style="width:100%;max-width:370px;background:rgba(255,255,255,.9);border-radius:20px;padding:10px;max-height:200px;overflow-y:auto;margin-top:12px" id="poLb"></div>
   </div>
   <button class="btn btn-green" onclick="go('s-join')">🔄 Jogar Novamente</button>
-  <button class="btn btn-gold" onclick="go('s-home')">🏠 Menu</button>
+  <!-- [FASE 2] Texto atualizado conforme spec -->
+  <button class="btn btn-gold" onclick="go('s-home')">🏠 Retornar ao Menu Principal</button>
 </div>
 
 <!-- ══════════════ RANKING ══════════════ -->
@@ -1511,7 +1545,7 @@ function handleMsg(msg) {
       if (msg.isHostPlayer || role === 'host') {
         // [ALTERAÇÃO 1] Anfitrião recebeu resultado como jogador
         hostScore = msg.score;
-        hostLives = msg.lives;
+        hostLives = msg.lives; // null — ignorado (fase 1)
         hostStreak = msg.streak;
         updateHostPlayerScorebar();
         if (msg.correct) { playCorrect(); showFeedback(true, msg.pts, msg.streak); }
@@ -1525,7 +1559,7 @@ function handleMsg(msg) {
         }
       } else {
         myScore = msg.score;
-        myLives = msg.lives;
+        myLives = msg.lives; // null — ignorado (fase 1)
         myStreak = msg.streak;
         updatePlayerScorebar();
         // Colorir o botão clicado: verde se correto, vermelho se errado
@@ -1541,9 +1575,7 @@ function handleMsg(msg) {
         } else {
           playWrong();
           showFeedback(false, 0, 0);
-          if (msg.lives <= 0) {
-            setTimeout(() => { hideFeedback(); document.getElementById('elimOv').classList.add('show'); }, 1200);
-          }
+          // [FASE 1] Sem eliminação — bloco if (msg.lives <= 0) removido
         }
       }
       break;
@@ -1581,9 +1613,7 @@ function handleMsg(msg) {
       }
       break;
 
-    case 'eliminated':
-      setTimeout(() => { document.getElementById('elimOv').classList.add('show'); }, 1500);
-      break;
+    // [FASE 1] case 'eliminated' removido — nenhum jogador é eliminado
 
     case 'kicked':
       showToast('⚠️ Foste removido da sala.', 'error');
@@ -2539,3 +2569,4 @@ function leaveGame() {
 </script>
 </body>
 </html>
+
