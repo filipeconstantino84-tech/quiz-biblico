@@ -206,7 +206,8 @@ function createGame(hostWs, hostName, hostAvatar, options) {
   };
   const hostPlayer = {
     ws: hostWs, id: hostPlayerId, name: hostName, avatar: hostAvatar || '🐑',
-    score: 0, streak: 0, lives: 3, answered: false, isHost: true
+    score: 0, streak: 0, answered: false, isHost: true
+    // [FASE 1] lives removido — nenhum jogador é eliminado
   };
   game.players.set(hostPlayerId, hostPlayer);
   games.set(pin, game);
@@ -373,11 +374,12 @@ function processAnswer(game, playerId, answerIdx) {
     player.score += pts;
   } else {
     player.streak = 0;
-    player.lives = Math.max(0, (player.lives || 3) - 1);
+    // [FASE 1] Sem desconto de vidas — jogador mantém-se até ao fim
   }
 
   // [ALTERAÇÃO 1] Enviar resultado ao jogador (seja host ou player normal)
-  sendToWs(player.ws, { type: 'answer_result', correct, pts, streak: player.streak, lives: player.lives, score: player.score, isHostPlayer: !!player.isHost });
+  // [FASE 1] lives enviado como null — cliente ignora
+  sendToWs(player.ws, { type: 'answer_result', correct, pts, streak: player.streak, lives: null, score: player.score, isHostPlayer: !!player.isHost });
   // Notificar o host do painel (se não for o próprio host a responder)
   if (!player.isHost) {
     sendToHost(game, { type: 'player_answered', id: playerId, name: player.name, correct, players: getPlayerList(game) });
@@ -386,8 +388,8 @@ function processAnswer(game, playerId, answerIdx) {
     sendToHost(game, { type: 'player_answered', id: playerId, name: player.name, correct, players: getPlayerList(game) });
   }
 
-  // Check if all answered
-  const allAnswered = [...game.players.values()].every(p => p.answered || p.lives <= 0);
+  // [FASE 1] Todos responderam quando answered=true (sem condição de lives)
+  const allAnswered = [...game.players.values()].every(p => p.answered);
   if (allAnswered) {
     clearInterval(game.timer);
     revealAnswer(game);
@@ -406,23 +408,13 @@ function revealAnswer(game) {
     explanation: q.explanation || null,
     leaderboard,
   });
-
-  // Remove dead players
-  for (const [id, player] of game.players) {
-    if (player.lives <= 0) {
-      sendToWs(player.ws, { type: 'eliminated' });
-    }
-  }
+  // [FASE 1] Bloco "Remove dead players" removido — ninguém é eliminado
 }
 
 function nextQuestion(game) {
-  // [ALTERAÇÃO 1] Remover jogadores eliminados (exceto o anfitrião — o anfitrião não é eliminado)
-  for (const [id, player] of game.players) {
-    if (player.lives <= 0 && !player.isHost) game.players.delete(id);
-  }
-  // Verificar se ainda há jogadores para jogar (host conta)
-  const activePlayers = [...game.players.values()].filter(p => p.lives > 0 || p.isHost);
-  if (activePlayers.length === 0) { endGame(game); return; }
+  // [FASE 1] Sem eliminação de jogadores — todos avançam independentemente de erros
+  // Apenas verificar se ainda há jogadores ligados
+  if (game.players.size === 0) { endGame(game); return; }
   game.currentQ++;
   startQuestion(game);
 }
@@ -477,7 +469,8 @@ wss.on('connection', (ws) => {
         const id = 'p' + ws.clientId;
         const player = {
           ws, id, name: msg.name, avatar: msg.avatar || '🐑',
-          score: 0, streak: 0, lives: 3, answered: false
+          score: 0, streak: 0, answered: false
+          // [FASE 1] lives removido — nenhum jogador é eliminado
         };
         game.players.set(id, player);
         ws.gamePin = game.pin;
@@ -829,3 +822,4 @@ function getDefaultQuestions() {
     { id:30, q:"Qual era o nome da esposa de Abraão?", a:["Rebeca","Sara","Raquel","Lia"], correct:1, cat:"personagens", icon:"👩", diff:"facil", explanation:"Sara foi a esposa de Abraão e mãe de Isaque (Gênesis 17:15)." },
   ];
 }
+
